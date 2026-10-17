@@ -414,10 +414,14 @@ def main():
     )
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    # cosine schedule: the learning rate glides from --lr down to 0 over the epochs,
+    # big steps early to learn fast, small steps at the end to settle into a minimum
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
 
     history = []
     for epoch in range(args.epochs):
         train_logs = run_epoch(model, full.batches(train_starts, args.batch_size, shuffle=True), weights, optimizer)
+        scheduler.step()   # once per epoch
         val_logs = run_epoch(model, full.batches(val_starts, args.batch_size, shuffle=False), weights) if len(val_starts) else {}
 
         history.append({"epoch": epoch + 1, "train": train_logs, "val": val_logs})
