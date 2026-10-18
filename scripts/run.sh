@@ -22,7 +22,7 @@ PLAN="${PLAN:-1}"                        # pusht: also test the WAM planning wit
 PLAN_COMPARE="${PLAN_COMPARE:-1}"        # pusht: also test the old planner, whose search starts from the last plan (warm_start)
 PLAN_SWEEP="${PLAN_SWEEP:-0}"            # pusht: 1 = also test bigger search budgets: wider noise, 3 rounds, no policy prior
 BRANCHES="${BRANCHES:-1}"                # pusht: 1 = the WAM also learns from simulator branches of the demos (scripts/branch_demos.py)
-BRANCH_LENGTH="${BRANCH_LENGTH:-8}"      # pusht: actions per branch; training windows (HORIZON) only use branches at least this long
+BRANCH_LENGTH="${BRANCH_LENGTH:-16}"      # pusht: actions per branch; training windows (HORIZON) only use branches at least this long
 PARALLEL_SEEDS="${PARALLEL_SEEDS:-1}"    # 1 = run all seeds at once on the job's GPU (same results, less wall time)
 case "$ENV_NAME" in
   pusht) DEFAULT_EPISODES=200; DEFAULT_MAX_STEPS=300; DEFAULT_RANDOM_ACTION_PROB=0.1 ;;
@@ -34,7 +34,7 @@ EPOCHS="${EPOCHS:-100}"
 EPISODES="${EPISODES:-$DEFAULT_EPISODES}"     # collected demonstrations per seed (90% train / 10% unseen)
 MAX_STEPS="${MAX_STEPS:-$DEFAULT_MAX_STEPS}"  # per collected and tested episode
 RANDOM_ACTION_PROB="${RANDOM_ACTION_PROB:-$DEFAULT_RANDOM_ACTION_PROB}"   # exploration bursts in the data
-HORIZON="${HORIZON:-5}"                  # imagination steps per training window
+HORIZON="${HORIZON:-15}"                 # imagination steps per training window
 STATE_WEIGHT="${STATE_WEIGHT:-0.5}"
 PREDICT_IMAGE="${PREDICT_IMAGE:-1}"      # 1 = the WAM also decodes images, so you can watch its imagination; 0 trains about 5x faster
 IMAGE_WEIGHT="${IMAGE_WEIGHT:-1.0}"
