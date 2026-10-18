@@ -22,6 +22,7 @@ PLAN="${PLAN:-1}"                        # pusht: also test the WAM planning wit
 PLAN_COMPARE="${PLAN_COMPARE:-1}"        # pusht: also test the old planner, whose search starts from the last plan (warm_start)
 PLAN_SWEEP="${PLAN_SWEEP:-0}"            # pusht: 1 = also test bigger search budgets: wider noise, 3 rounds, no policy prior
 BRANCHES="${BRANCHES:-1}"                # pusht: 1 = the WAM also learns from simulator branches of the demos (scripts/branch_demos.py)
+BRANCH_LENGTH="${BRANCH_LENGTH:-8}"      # pusht: actions per branch; training windows (HORIZON) only use branches at least this long
 PARALLEL_SEEDS="${PARALLEL_SEEDS:-1}"    # 1 = run all seeds at once on the job's GPU (same results, less wall time)
 case "$ENV_NAME" in
   pusht) DEFAULT_EPISODES=200; DEFAULT_MAX_STEPS=300; DEFAULT_RANDOM_ACTION_PROB=0.1 ;;
@@ -37,6 +38,7 @@ HORIZON="${HORIZON:-5}"                  # imagination steps per training window
 STATE_WEIGHT="${STATE_WEIGHT:-0.5}"
 PREDICT_IMAGE="${PREDICT_IMAGE:-1}"      # 1 = the WAM also decodes images, so you can watch its imagination; 0 trains about 5x faster
 IMAGE_WEIGHT="${IMAGE_WEIGHT:-1.0}"
+IMAGE_FOCUS="${IMAGE_FOCUS:-0}"          # image loss: pixels that move, the T and the agent, count 1 + IMAGE_FOCUS times
 LATENT_WEIGHT="${LATENT_WEIGHT:-1.0}"
 STATE_INPUT="${STATE_INPUT:-1}"          # 0 = image + language only (no state_t input)
 ACTION_HEAD="${ACTION_HEAD:-mlp}"        # mlp, diffusion or flow
@@ -104,7 +106,7 @@ export PYTHONUNBUFFERED=1
 
 echo "[run] host=$(hostname) python=$($PYV --version) torch=$($PYV -c 'import torch; print(torch.__version__, torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu")')"
 echo "[run] cpus: $(nproc) slurm_job=${SLURM_JOB_ID:-none}"
-echo "[run] config: ENV_NAME=$ENV_NAME PUSHT_DATA=$PUSHT_DATA DEMOS=$DEMOS MODE=$MODE PLAN=$PLAN PLAN_COMPARE=$PLAN_COMPARE PLAN_SWEEP=$PLAN_SWEEP BRANCHES=$BRANCHES SEEDS='$SEEDS' EPOCHS=$EPOCHS EPISODES=$EPISODES MAX_STEPS=$MAX_STEPS RANDOM_ACTION_PROB=$RANDOM_ACTION_PROB HORIZON=$HORIZON ACTION_CHUNK=$ACTION_CHUNK TEMPORAL_ENSEMBLE=$TEMPORAL_ENSEMBLE STATE_WEIGHT=$STATE_WEIGHT PREDICT_IMAGE=$PREDICT_IMAGE IMAGE_WEIGHT=$IMAGE_WEIGHT LATENT_WEIGHT=$LATENT_WEIGHT STATE_INPUT=$STATE_INPUT ACTION_HEAD=$ACTION_HEAD POLICY_HIDDEN=$POLICY_HIDDEN POLICY_LAYERS=$POLICY_LAYERS D_MODEL=$D_MODEL IMAGE_ENCODER=$IMAGE_ENCODER LR_SCHEDULE=$LR_SCHEDULE TEST_EPISODES=$TEST_EPISODES"
+echo "[run] config: ENV_NAME=$ENV_NAME PUSHT_DATA=$PUSHT_DATA DEMOS=$DEMOS MODE=$MODE PLAN=$PLAN PLAN_COMPARE=$PLAN_COMPARE PLAN_SWEEP=$PLAN_SWEEP BRANCHES=$BRANCHES BRANCH_LENGTH=$BRANCH_LENGTH SEEDS='$SEEDS' EPOCHS=$EPOCHS EPISODES=$EPISODES MAX_STEPS=$MAX_STEPS RANDOM_ACTION_PROB=$RANDOM_ACTION_PROB HORIZON=$HORIZON ACTION_CHUNK=$ACTION_CHUNK TEMPORAL_ENSEMBLE=$TEMPORAL_ENSEMBLE STATE_WEIGHT=$STATE_WEIGHT PREDICT_IMAGE=$PREDICT_IMAGE IMAGE_WEIGHT=$IMAGE_WEIGHT IMAGE_FOCUS=$IMAGE_FOCUS LATENT_WEIGHT=$LATENT_WEIGHT STATE_INPUT=$STATE_INPUT ACTION_HEAD=$ACTION_HEAD POLICY_HIDDEN=$POLICY_HIDDEN POLICY_LAYERS=$POLICY_LAYERS D_MODEL=$D_MODEL IMAGE_ENCODER=$IMAGE_ENCODER LR_SCHEDULE=$LR_SCHEDULE TEST_EPISODES=$TEST_EPISODES"
 
 STATE_FLAG=""
 [ "$STATE_INPUT" = "0" ] && STATE_FLAG="--no_state_input"
@@ -187,14 +189,14 @@ run_seed() {
   # training on the demos alone
   WAM_DATA="$R/$ENV_NAME.npz"
   if [ "$ENV_NAME" = "pusht" ] && [ "$BRANCHES" = "1" ]; then
-    $PYV -m scripts.branch_demos "$R/$ENV_NAME.npz" --seed "$SEED" --output-path "$R/branched.npz" | tail -1
+    $PYV -m scripts.branch_demos "$R/$ENV_NAME.npz" --seed "$SEED" --length "$BRANCH_LENGTH" --output-path "$R/branched.npz" | tail -1
     WAM_DATA="$R/branched.npz"
   fi
 
   # 2. WAM and the mini-VLA baseline (same demos, same action head, same seed)
   $PYV -m scripts.train --dataset-path "$WAM_DATA" --model_type wam $MODEL_FLAGS \
     --predict_state $IMAGE_FLAG $STATE_FLAG --horizon "$HORIZON" \
-    --state-weight "$STATE_WEIGHT" --image-weight "$IMAGE_WEIGHT" --latent-weight "$LATENT_WEIGHT" \
+    --state-weight "$STATE_WEIGHT" --image-weight "$IMAGE_WEIGHT" --image-focus "$IMAGE_FOCUS" --latent-weight "$LATENT_WEIGHT" \
     --epochs "$EPOCHS" --seed "$SEED" --device "$DEVICE" --save-path "$R/wam.pt" | grep -E "Model:|Episodes:|Epoch $EPOCHS/| val:" | tail -4
 
   $PYV -m scripts.train --dataset-path "$R/$ENV_NAME.npz" --model_type vla $MODEL_FLAGS \
