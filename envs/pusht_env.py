@@ -305,6 +305,24 @@ class PushTEnv:
         return self._render()
 
 
+def draw(state, size=192):
+    """A sharp picture of a state, for videos: drawn straight at `size` pixels with smooth
+    edges, instead of through the dataset's 96 px frames. The model never sees these."""
+    import cv2
+
+    k = size / WORKSPACE
+    img = np.full((size, size, 3), BACKGROUND, dtype=np.uint8)
+    phys = from_state(state)
+    for a, b in WALLS:
+        cv2.line(img, tuple(int(round(c * k)) for c in a), tuple(int(round(c * k)) for c in b), WALL_COLOR, 2, cv2.LINE_AA)
+    for pose, color in ((GOAL_POSE, GOAL_COLOR), (phys[4:7], BLOCK_COLOR)):
+        for part in T_PARTS:
+            cv2.fillPoly(img, [np.round(to_world(part, pose) * k * 16).astype(np.int32)], color, cv2.LINE_AA, shift=4)
+    center = tuple(int(round(c * k * 16)) for c in phys[:2])
+    cv2.circle(img, center, int(round(AGENT_RADIUS * k * 16)), AGENT_COLOR, -1, cv2.LINE_AA, shift=4)
+    return img
+
+
 def distance_to_t(point, pose):
     """Distance from a world point to the T's outline (0 inside is not distinguished)."""
     outline = to_world(T_OUTLINE, pose)

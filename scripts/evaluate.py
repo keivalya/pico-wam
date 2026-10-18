@@ -275,6 +275,48 @@ def evaluate_counterfactuals(model, data, episodes, env_name="toy", horizon=10, 
     }
 
 
+@torch.no_grad()
+def evaluate_dreams(model, data, episodes, horizon=40, every=20, seed=0):
+    """
+    Push-T: is a dream right? From a start every `every` steps of each unseen episode,
+    the policy acts inside the model's imagination for `horizon` steps; the simulator
+    then plays the same actions from the same state. Medians over starts, in pixels:
+    how far the imagined agent and T (mean corner distance) are from the real ones.
+    """
+    from envs.pusht_env import PushTEnv, T_OUTLINE, from_state, to_world
+
+    env = PushTEnv(image_size=model.config["image_size"])
+    torch.manual_seed(seed)
+    agent, block = [], []
+    for e in episodes:
+        ep = get_episode(data, e, device=model.state_mean.device)
+        for t0 in range(0, ep["actions"].shape[0] - horizon, every):
+            d = model.imagine(ep["images"][t0:t0 + 1], ep["text_ids"], ep["states"][t0:t0 + 1], horizon)
+            dream = d["state"][0, 1:].cpu().numpy()
+            real = env.simulate(ep["states"][t0].cpu().numpy(), d["actions"][0].cpu().numpy())
+            P, R = [from_state(x) for x in dream], [from_state(x) for x in real]
+            agent.append([float(np.linalg.norm(p[:2] - r[:2])) for p, r in zip(P, R)])
+            block.append([float(np.linalg.norm(to_world(T_OUTLINE, p[4:7]) - to_world(T_OUTLINE, r[4:7]), axis=1).mean())
+                          for p, r in zip(P, R)])
+    agent, block = np.asarray(agent), np.asarray(block)
+    return {"horizon": list(range(1, horizon + 1)), "agent_px": np.median(agent, 0).tolist(),
+            "block_px": np.median(block, 0).tolist(), "n_starts": int(len(agent))}
+
+
+@torch.no_grad()
+def evaluate_moving_pixels(model, data, episodes, threshold=0.1):
+    """Decoder error on the pixels that move: where a frame differs from the mean image (the T and the agent)."""
+    mean = model.image_decoder.mean_image
+    num, den = 0.0, 0.0
+    for e in episodes:
+        ep = get_episode(data, e, device=mean.device)
+        recon = model.decode(encode_episode(model, ep)[:, None])["image"][:, 0]
+        mask = ((ep["images"] - mean).abs().amax(dim=1, keepdim=True) > threshold).float()
+        num += float((((recon - ep["images"]) ** 2) * mask).sum())
+        den += float(mask.sum()) * 3
+    return num / max(den, 1.0)
+
+
 def main():
     args = parse_args()
     args.device = resolve_device(args.device)
@@ -313,6 +355,16 @@ def main():
         print(f"{'k':>3} {'WAM nMSE':>9} {'no-op':>8}")
         for k, w, n in zip(cf["horizon"], cf["wam_nmse"], cf["noop_nmse"]):
             print(f"{k:>3} {w:>9.4f} {n:>8.4f}")
+
+    if ckpt.get("env") == "pusht" and model.predict_state:
+        dr = evaluate_dreams(model, data, episodes)
+        results["dream"] = dr
+        print(f"\nDreams checked in the simulator ({dr['n_starts']} starts): median error in pixels")
+        for k in [1, 5, 10, 20, 40]:
+            print(f"  k={k:>2}  agent {dr['agent_px'][k - 1]:5.1f}  T {dr['block_px'][k - 1]:5.1f}")
+    if model.predict_image:
+        results["image_mse_moving"] = evaluate_moving_pixels(model, data, episodes)
+        print(f"\nDecoded frames, error on the moving pixels only: {results['image_mse_moving']:.5f}")
 
     output = args.output or os.path.splitext(args.checkpoint)[0] + "_eval.json"
     with open(output, "w") as f:

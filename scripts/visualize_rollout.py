@@ -366,25 +366,75 @@ def plot_keypoints(model, ep, n_frames, out_dir):
 # ------------------------------------------------------------------- video
 
 
+LOOK_EVERY = 12   # like the planner: imagine 12 steps, then look at the world again
+
+
 @torch.no_grad()
-def save_dream_video(model, ep, imag, dream, out_dir, gif=False):
-    if "image" not in imag:
-        return
+def dream_for_real(model, ep, steps, every=LOOK_EVERY):
+    """
+    Push-T: the policy acts inside the model's imagination for `every` steps, the
+    same actions are then played in the simulator, and the next dream starts from
+    what really happened. Returns the dreamed and the real states, (steps + 1, 8) each.
+    """
+    from envs.pusht_env import PushTEnv
+
+    env = PushTEnv(image_size=model.config["image_size"])
+    dev = ep["states"].device
+    s = ep["states"][0].cpu().numpy()
+    dreamed, real = [s], [s]
+    while len(real) <= steps:
+        img = torch.from_numpy(env._render(s)).permute(2, 0, 1).float()[None].div(255.0).to(dev)
+        d = model.imagine(img, ep["text_ids"], torch.from_numpy(s).float()[None].to(dev), every)
+        dreamed += list(d["state"][0, 1:].cpu().numpy())
+        sim = env.simulate(s, d["actions"][0].cpu().numpy())
+        real += list(sim)
+        s = sim[-1]
+    return np.asarray(dreamed[: steps + 1]), np.asarray(real[: steps + 1])
+
+
+@torch.no_grad()
+def save_dream_video(model, ep, imag, dream, out_dir, gif=False, env_name="toy"):
+    """
+    Push-T, four panels: the real episode | imagined from its first frame with the
+    person's actions | dreamed, the model's own policy acting in its imagination and
+    looking at the world again every LOOK_EVERY steps | the dreamed actions played
+    in the simulator. Frames are drawn from the states the model imagines, which its
+    linear readout gives to within a few pixels; the image decoder's pictures of the
+    T are blurrier. Other envs: real | imagined | dreamed, as decoded images.
+    """
     import imageio.v2 as imageio
     import cv2
 
     def label(img, text):
         img = cv2.resize(img, (192, 192), interpolation=cv2.INTER_NEAREST)
-        return cv2.putText(img.copy(), text, (4, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
+        return cv2.putText(img.copy(), text, (4, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1, cv2.LINE_AA)
 
-    frames = [
-        np.concatenate([
-            label(to_np_img(ep["images"][t]), f"real t={t}"),
-            label(to_np_img(imag["image"][0, t]), "imagined"),  # under the real actions
-            label(to_np_img(dream["image"][0, t]), "dreamed"),   # its own policy acting
-        ], axis=1)
-        for t in range(imag["image"].shape[1])
-    ]
+    if env_name == "pusht" and "state" in imag:
+        from envs.pusht_env import draw
+
+        T = imag["state"].shape[1] - 1
+        dreamed, real = dream_for_real(model, ep, T)
+        states, imagined = ep["states"].cpu().numpy(), imag["state"][0].cpu().numpy()
+        frames = [
+            np.concatenate([
+                label(draw(states[t]), f"real t={t}"),
+                label(draw(imagined[t]), "imagined"),
+                label(draw(dreamed[t]), "dreamed: looks again" if t and t % LOOK_EVERY == 0 else "dreamed"),
+                label(draw(real[t]), "dream, for real"),
+            ], axis=1)
+            for t in range(T + 1)
+        ]
+    elif "image" in imag:
+        frames = [
+            np.concatenate([
+                label(to_np_img(ep["images"][t]), f"real t={t}"),
+                label(to_np_img(imag["image"][0, t]), "imagined"),  # under the real actions
+                label(to_np_img(dream["image"][0, t]), "dreamed"),   # its own policy acting
+            ], axis=1)
+            for t in range(imag["image"].shape[1])
+        ]
+    else:
+        return
     path = os.path.join(out_dir, "dream.mp4")
     with imageio.get_writer(path, fps=8) as w:
         for f in frames:
@@ -423,7 +473,7 @@ def main():
     plot_horizon(results, labels, out_dir)
     plot_keypoints(model, ep, args.frames, out_dir)
     if args.video or args.gif:
-        save_dream_video(model, ep, imag, dream, out_dir, gif=args.gif)
+        save_dream_video(model, ep, imag, dream, out_dir, gif=args.gif, env_name=ckpt["env"])
 
 
 if __name__ == "__main__":
