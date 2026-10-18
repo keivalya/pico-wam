@@ -311,7 +311,25 @@ for k in range(horizon):
 - **Imagined**: you supply the actions. "Given these actions, what happens?" You can check the answer against the real episode.
 - **Dreamed**: you pass `actions=None`, and the model's *own policy* chooses each action from its own imagined latent. Nothing from the real world is used after the first frame. "What do I think will happen if I act the way I would act?"
 
-The GIF at the top of the README shows both, side by side with a real episode.
+The video at the top of the README shows both, next to a real episode, in four panels:
+
+1. **real**: an unseen human demonstration;
+2. **imagined**: from its first frame, with the person's actions;
+3. **dreamed**: the model's own policy acting inside its imagination;
+4. **dream, for real**: the same dreamed actions played in the simulator.
+
+The fourth panel is the fair check of a dream. Comparing a dream with the person's episode isn't fair: the policy pushes differently from the person, so even a perfect dream would look different from panel 1.
+
+**How long can a dream last?** I checked dreams against the simulator from 88 starts in the unseen episodes: the policy dreams 40 steps, then the simulator plays the same actions. Averaged over three training runs, here is how far the dream is from the truth:
+
+| steps ahead | 5 | 10 | 20 | 40 |
+|---|---|---|---|---|
+| disk off by, px | 4.5 | 6.6 | 13.1 | 30.5 |
+| T off by, px | 3.1 | 4.9 | 10.4 | 24.1 |
+
+A dream is good for about 10 to 15 steps. After that, small errors pile up: the model was only trained to imagine 5 steps at a time, and each imagined step starts from the last one's small mistakes. Dreams with the person's actions drift just as fast, so the policy isn't the problem. That's why the planner only looks 12 steps ahead and looks at the world again at every step, and why the video's dream looks again every 12 steps.
+
+**Why the video draws states instead of decoded pictures.** The latent knows where the T is to within about 2 px; that's what the state readout says. The image decoder still draws the T as a blur. The T covers a small part of a mostly white table, and a pixel-error loss can save most of its error by painting a soft average. So the video draws each imagined state the way the simulator draws a real one; `visualize_rollout.py` still saves the decoded pictures in `1_imagination.png`.
 
 ### 3.10 Planning with the world model
 
