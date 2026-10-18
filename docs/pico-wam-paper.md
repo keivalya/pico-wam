@@ -18,11 +18,12 @@ I wrote this for three kinds of readers, and you can skip around:
 | **comfortable with VLAs and imitation learning** | [Part 1](#part-1--vla-world-model-wam) | Part 0 |
 | **a researcher who wants the results** | [Part 4](#part-4--does-it-actually-imagine) to [Part 7](#part-7--where-the-cost-goes) | most of Parts 0–3 |
 
-> **TL;DR.** A World Action Model (WAM) is a robot policy that also learns to predict what its actions will do. I built a tiny one, **pico-WAM** (0.75M parameters, about 1,000 lines of PyTorch), trained it on the 206 human demonstrations of LeRobot's Push-T dataset, and checked every prediction against the simulator. Four things stuck with me:
+> **TL;DR.** A World Action Model (WAM) is a robot policy that also learns to predict what its actions will do. I built a small one, **pico-WAM** (about a million parameters, about 1,000 lines of PyTorch), trained it on the 206 human demonstrations of LeRobot's Push-T dataset, and checked every prediction against the simulator. Five things stuck with me:
 > 1. **Its predictions are good along human actions and poor under new ones.** Fifteen steps ahead, its state error is 0.0178, 44× lower than assuming nothing moves. But under pushes people never made, it predicts the T worse than simply assuming the T stays put.
-> 2. **Planning with its world model beats its own policy, as long as the search stays close to the policy.** Acting on its own, the first model covers 14.0% of the target at best; planning with the same model reaches 37.0%. Search harder, and the planner finds the model's mistakes instead of better pushes.
-> 3. **Three simple changes make it succeed.** Predict a few actions at a time, show the world model what other pushes do by branching the demonstrations in the simulator, and restart every search from the policy. Then planning succeeds in 77 of 300 unseen episodes, more than any other policy in the study, including the 57 of mini-VLA, the same network without a world model. Mini-VLA still covers more of the target on average.
-> 4. **It's cheap.** A planning step takes 32 ms on a single laptop CPU thread, and the whole study fits in about 60 GPU-hours.
+> 2. **Planning with its world model beats its own policy, as long as the search stays close to the policy.** Search harder, and the planner finds the model's mistakes instead of better pushes.
+> 3. **Four simple changes make it succeed.** Predict a few actions at a time, show the world model what other pushes do by branching the demonstrations in the simulator, restart every search from the policy, and give the policy a bigger action head. Then planning succeeds in 121 of 300 unseen episodes, and mini-VLA, the same network without a world model, in 116.
+> 4. **Without the state as input, only the WAM works.** From images alone, the WAM succeeds in 46 episodes and mini-VLA in 0.
+> 5. **It's cheap.** A planning step takes 36 ms on a single laptop CPU thread, and the whole study fits in about 90 GPU-hours.
 
 ---
 
@@ -84,7 +85,7 @@ Here's the map I wish someone had handed me when I moved from VLAs to WAMs. Almo
 
 ## Part 2 — The WAM design space, and the WAMs you can download today
 
-Every WAM, from my 0.75M-parameter model to a 5B-parameter video model, makes the same four decisions:
+Every WAM, from my one-million-parameter model to a 5B-parameter video model, makes the same four decisions:
 
 ```mermaid
 flowchart LR
@@ -127,9 +128,9 @@ Here are eight WAMs whose code you can download today. They span the whole desig
 | V-JEPA 2-AC | future representations | frozen encoder + 300M predictor | none: the planner acts | MPC planning |
 | DreamGen | robot videos | fine-tuned video generator | inverse dynamics labels | synthetic data |
 | LingBot-VA | video latents | autoregressive diffusion, 5.3B | inverse dynamics | action decoding, memory |
-| **pico-WAM** | **state, pixels, latents** | **CNN + GRU + MLPs, 0.75M** | **MLP, diffusion or flow head** | **training signal, planning** |
+| **pico-WAM** | **state, pixels, latents** | **CNN + GRU + MLPs, 1.3M** | **MLP, diffusion or flow head** | **training signal, planning** |
 
-Two systems that plan on Push-T itself are worth knowing too. **DINO-WM** ([Zhou et al.](https://www.alphaxiv.org/abs/2411.04983)) plans with the cross-entropy method in the features of a frozen DINOv2 encoder, with a predictor of about 19M parameters trained on 18,500 Push-T trajectories. **PILOT** ([Liu et al.](https://www.alphaxiv.org/abs/2610.14335)) starts that kind of search from a learned policy's actions and beats executing the same policy on long Push-T tasks. Part 6 uses the same idea with a model a twenty-fifth the size of DINO-WM's predictor alone.
+Two systems that plan on Push-T itself are worth knowing too. **DINO-WM** ([Zhou et al.](https://www.alphaxiv.org/abs/2411.04983)) plans with the cross-entropy method in the features of a frozen DINOv2 encoder, with a predictor of about 19M parameters trained on 18,500 Push-T trajectories. **PILOT** ([Liu et al.](https://www.alphaxiv.org/abs/2610.14335)) starts that kind of search from a learned policy's actions and beats executing the same policy on long Push-T tasks. Part 6 uses the same idea with a whole model about a fourteenth the size of DINO-WM's predictor alone.
 
 ---
 
@@ -210,11 +211,24 @@ def _expected_xy(self, attn):           # attn: (B, K, h, w), sums to 1 over (h,
     return torch.stack([kp_x, kp_y], dim=-1)    # (B, K, 2)
 ```
 
-The nice side effect is that you can draw the keypoints on the image and *see* what the encoder looks at (Figure 12).
+The nice side effect is that you can draw the keypoints on the image and *see* what the encoder looks at (Figure 14).
 
 ### 3.5 The policy head
 
-The action head maps $z_t$ to an action. It's the same menu as in any VLA: a plain MLP regressor, a DDPM diffusion head, or a flow-matching head (`models/action_heads.py`). All three expose `loss(actions, z)` and `sample(z)`, so nothing else in the model cares which one you pick. Any of them can also predict a *chunk* of the next $K$ actions at once, as Diffusion Policy does. The default model uses the MLP head and predicts chunks of $K = 8$ actions, executing the first 4 before it asks again. Parts 4 and 5 start simpler, with one action per step, and Part 6 shows why chunks help.
+The action head maps $z_t$ to an action. It's the same menu as in any VLA: a plain MLP regressor, a DDPM diffusion head, or a flow-matching head (`models/action_heads.py`). All three expose `loss(actions, z)` and `sample(z)`, so nothing else in the model cares which one you pick. Any of them can also predict a *chunk* of the next $K$ actions at once, as Diffusion Policy does. The default model uses the MLP head with three hidden layers of 512 numbers, and predicts chunks of $K = 8$ actions, executing the first 4 before it asks again:
+
+```python
+class MLPActionHead(nn.Module):          # models/action_heads.py
+    def __init__(self, action_dim, cond_dim, hidden_dim=512, num_layers=3):
+        super().__init__()
+        layers, width = [], cond_dim
+        for _ in range(num_layers):
+            layers += [nn.Linear(width, hidden_dim), nn.ReLU()]
+            width = hidden_dim
+        self.net = nn.Sequential(*layers, nn.Linear(width, action_dim))   # action_dim = 2 x K
+```
+
+This head is the biggest part of the model: 599,568 of its 1,330,923 parameters. Parts 4 and 5 start with a much smaller one, a single hidden layer of 128, and one action per step. Part 6 shows why chunks and the bigger head help.
 
 > **A diffusion detail that is easy to get wrong.** My first diffusion head used a linear noise schedule from $10^{-4}$ to $10^{-2}$ over 16 steps. That sounds reasonable, but it ends at $\bar\alpha_T \approx 0.92$: the "fully noised" action is still 92% signal. Sampling, though, starts from pure Gaussian noise the model never saw in training. Switching to a cosine schedule ($\bar\alpha_T \approx 10^{-5}$) and the proper DDPM posterior fixed it. If you build a diffusion head with few steps, check $\bar\alpha_T$.
 
@@ -310,7 +324,26 @@ z = model.dynamics.rollout(z0.expand(N, -1), seqs)                   # imagine a
 costs = self.cost(model.denormalize_state(model.state_readout(z)))   # how far is the T from the target?
 ```
 
-A candidate's cost is the mean distance, in pixels, between the T's corners and the target's corners, read from the imagined states, plus a small pull of the disk toward the T. The planner executes the first action of the cheapest candidate, and at the next step it **starts over from the policy's plan**. My first version reused the last step's plan instead, which sounds smarter and isn't; Part 6 shows why. I fixed the settings (one round of 256 candidates, noise 0.1, 12 steps) on 20 development starts that are never used for testing.
+A candidate's cost is the mean distance, in pixels, between the T's corners and the target's corners, read from the imagined states, plus a small pull of the disk toward the T. The planner executes the first action of the cheapest candidate, and at the next step it **starts over from the policy's plan**:
+
+```mermaid
+flowchart LR
+    O["camera image,<br/>state, instruction"] --> E["encode → z"]
+    E --> P["policy imagines<br/>its own 12-step plan"]
+    P --> C["256 noisy copies<br/>of that plan"]
+    C --> D["world model imagines<br/>each one, 12 steps"]
+    D --> S["score: how far is<br/>the imagined T<br/>from the target?"]
+    S --> A["do the first action<br/>of the best plan"]
+    A -->|"next step,<br/>start over"| O
+```
+
+*Figure 5. The planning loop. Nothing in it touches the simulator: every score comes from the world model's imagination.*
+
+Here's one real planning step of the final model:
+
+![One planning step](figures/fig-pusht-planner.svg)
+
+*Figure 6. (a) Grey: the disk paths the world model imagines for the candidate plans. Blue: the policy's own plan. Green: the plan with the lowest imagined cost, which the planner picks. The dashed T is where the model thinks the T will be after the green plan; the black T is where the simulator really puts it. Here they agree well. (b) The imagined cost of all 256 candidates. The policy's plan is good, and the search finds one a bit better.* My first version reused the last step's plan instead, which sounds smarter and isn't; Part 6 shows why. I fixed the settings (one round of 256 candidates, noise 0.1, 12 steps) on 20 development starts that are never used for testing.
 
 ### 3.11 Run it yourself
 
@@ -326,8 +359,8 @@ python -m scripts.branch_demos data/pusht.npz --output-path data/pusht_branched.
 # train the WAM on demos + branches, and the mini-VLA baseline on the demos alone
 # (a GPU helps: --device auto picks CUDA or MPS; drop --predict_image to train about 5x faster)
 python -m scripts.train --dataset-path data/pusht_branched.npz --model_type wam --predict_state --predict_image \
-  --action-chunk 8 --epochs 100 --save-path checkpoints/wam.pt --device auto
-python -m scripts.train --dataset-path data/pusht.npz --model_type vla --action-chunk 8 --epochs 100 \
+  --action-chunk 8 --policy-hidden 512 --policy-layers 3 --epochs 100 --save-path checkpoints/wam.pt --device auto
+python -m scripts.train --dataset-path data/pusht.npz --model_type vla --action-chunk 8 --policy-hidden 512 --policy-layers 3 --epochs 100 \
   --save-path checkpoints/vla.pt --device auto
 
 # how good is the imagination? what does the model believe?
@@ -339,7 +372,7 @@ python -m scripts.test --checkpoint checkpoints/wam.pt --episodes 20
 python -m scripts.test --checkpoint checkpoints/wam.pt --episodes 20 --planner mpc
 ```
 
-For three independent runs of all of it, on one GPU: `bash scripts/run.sh`. Its configuration block at the top is where every experiment in this tutorial changes one line.
+For three independent runs of all of it, on one GPU: `bash scripts/run.sh`. Its configuration block at the top is where every experiment in this tutorial changes a setting or two.
 
 ---
 
@@ -347,11 +380,13 @@ For three independent runs of all of it, on one GPU: `bash scripts/run.sh`. Its 
 
 Every number from here on is measured on unseen episodes and averaged over three independent training runs, each with its own train/test split and initialization. Figures show the spread across runs.
 
+A note on the numbers: **state error** is the squared prediction error after dividing each number by how much it usually varies, so 0 is perfect and 1 is about as bad as always guessing the average. **Coverage** is how much of the green target the T covers, and an episode succeeds above 95%.
+
 Parts 4 and 5 study the simplest version first, which I call the **study base**: one action per step, 15 epochs, human demonstrations only. It's the easiest model to understand, and its failures are the most instructive. Part 6 then adds the three changes that make it succeed.
 
 ![Prediction](figures/fig-pusht-prediction.svg)
 
-*Figure 5. **Imagined states beat "nothing changes" by far; a straight line does surprisingly well; imagined pixels are mixed.** (a) State error vs. how many steps the model imagines, with the recorded human actions, compared with "nothing changes" and with a linear model of state and action. (b) The same under random actions, checked against the simulator. (c) Pixel error of the decoded imagination vs. just copying the current frame.*
+*Figure 7. **Imagined states beat "nothing changes" by far; a straight line does surprisingly well; imagined pixels are mixed.** (a) State error vs. how many steps the model imagines, with the recorded human actions, compared with "nothing changes" and with a linear model of state and action. (b) The same under random actions, checked against the simulator. (c) Pixel error of the decoded imagination vs. just copying the current frame.*
 
 - **States: yes.** After 15 imagined steps, the state error is 0.0178, 44× lower than "nothing changes" (0.7772).
 - **But check against a straight line.** A linear model of state and action, fitted by least squares, is *more* accurate one step ahead (0.0007 vs. 0.0018), because the disk follows a linear controller. It falls behind over longer horizons (0.0665 at 15 steps), where the T's contact motion takes over.
@@ -368,7 +403,7 @@ Here's one episode, as the model sees it:
 
 ![Episode strip](figures/fig-pusht-episode-strip.svg)
 
-*Figure 6. Real frames; the decoding of each real frame's latent; an imagination from $t = 0$ with the real actions; and a dream, where its own policy acts. The bottom two rows see nothing after the first frame.*
+*Figure 8. Real frames; the decoding of each real frame's latent; an imagination from $t = 0$ with the real actions; and a dream, where its own policy acts. The bottom two rows see nothing after the first frame.*
 
 The imagined row keeps the T moving onto the target for 68 steps, from one frame and the human's actions. The dream pushes differently, because the policy acts differently from the person.
 
@@ -376,13 +411,13 @@ And here's what the model believes over time, variable by variable:
 
 ![Beliefs](figures/fig-pusht-beliefs.svg)
 
-*Figure 7. The disk's and the T's positions over one unseen episode: the truth (black), the readout of each real frame's latent (blue), an imagination from $t = 0$ with the real actions (red dashed), and a dream with the model's own policy (purple dotted).*
+*Figure 9. The disk's and the T's positions over one unseen episode: the truth (black), the readout of each real frame's latent (blue), an imagination from $t = 0$ with the real actions (red dashed), and a dream with the model's own policy (purple dotted).*
 
 **Sustained pushes.** I also pushed it harder: from one start, imagine 15 steps of a constant push in each of eight directions.
 
 ![What if](figures/fig-pusht-what-if.svg)
 
-*Figure 8. (a) Imagined (dashed) vs. true (solid) disk trajectories for 15 steps of constant pushing. (b) The decoded imagined frames at the end. (c) Endpoint error averaged over all eight directions and all unseen episodes, compared with a prediction that ignores the push.*
+*Figure 10. (a) Imagined (dashed) vs. true (solid) disk trajectories for 15 steps of constant pushing. (b) The decoded imagined frames at the end. (c) Endpoint error averaged over all eight directions and all unseen episodes, compared with a prediction that ignores the push.*
 
 The disk's path is roughly right. The T's is not: averaged over directions, the imagined T ends up further from the truth than if the push had been ignored. Same lesson as above.
 
@@ -390,7 +425,7 @@ Finally, what does the latent space look like inside?
 
 ![Latent map](figures/fig-pusht-latent-map.svg)
 
-*Figure 9. (a) Unseen latents projected onto their first two principal components, coloured by episode progress. (b) How each principal component correlates with each state variable.*
+*Figure 11. (a) Unseen latents projected onto their first two principal components, coloured by episode progress. (b) How each principal component correlates with each state variable.*
 
 ---
 
@@ -408,7 +443,9 @@ Rows marked *base* change one thing of the study base; rows marked *chunks* chan
 | *base:* no image loss | planning 38.1%, the same | images are for you, not for the planner |
 | *chunks:* no image decoder | planning 38.0%, against 39.2%, at a tenth of the training cost | same lesson, and a free 10× speedup |
 | *base:* pixels only, no state input | about 10% for every policy | the state input carries most of the information |
-| *chunks:* latent width 64; *base:* 256 | planning 36.3% and 35.2%, neither better than 128 | 128 numbers are enough |
+| *chunks:* latent width 64; *base:* 256 | planning 36.3% and 35.2%, neither better than 128 | 128 numbers are enough for the latent |
+| *final:* action head 1×128 → 3×512 | planning successes 77 → 121, the WAM's own policy 7 → 85 | the action head was the bottleneck |
+| *final:* pixels only | WAM planning 46 successes, mini-VLA 0 | without the state, the world model's training is what makes it work |
 | *base:* diffusion head | mini-VLA 14.2%, against 24.2% | a fancier head needs more training |
 | *chunks:* $K$ = 16, averaging chunks, plain CNN | mini-VLA 32.5%, 39.0%, 44.7%, against 40.2% | the simple choices are fine |
 | *base:* search harder | planning fell from 33.8% to 18.2% | search finds the model's mistakes |
@@ -421,7 +458,7 @@ Rows marked *base* change one thing of the study base; rows marked *chunks* chan
 
 ![Data](figures/fig-pusht-data.svg)
 
-*Figure 10. (a) Error on the T after 10 imagined steps, under random actions (red) and recorded actions (orange), compared with assuming the T stays put (grey), for each training dataset. (b) Coverage of mini-VLA, the reactive WAM and the planning WAM trained on each dataset.*
+*Figure 12. (a) Error on the T after 10 imagined steps, under random actions (red) and recorded actions (orange), compared with assuming the T stays put (grey), for each training dataset. (b) Coverage of mini-VLA, the reactive WAM and the planning WAM trained on each dataset.*
 
 Part 4 showed that the world model trained on human demonstrations predicts the T *worse* than assuming it stays put when you push in ways people didn't. Is that the model's fault, or the data's? To find out, I trained the same model on four other datasets made with the scripted expert of Part 3.3.
 
@@ -446,15 +483,15 @@ So a planner needs two things: a world model that knows what pushes do, and a po
 
 ![Ablations](figures/fig-pusht-ablations.svg)
 
-*Figure 11. Top group: each row changes one thing of the study base, grey. Bottom group: each row changes one thing of the model with action chunks, grey. (a) State error after 15 imagined steps. (b) Error on the T after 10 random-action steps. (c) Coverage of mini-VLA, the reactive WAM and the planning WAM.*
+*Figure 13. Top group: each row changes one thing of the study base, grey. Bottom group: each row changes one thing of the model with action chunks, grey. (a) State error after 15 imagined steps. (b) Error on the T after 10 random-action steps. (c) Coverage of mini-VLA, the reactive WAM and the planning WAM.*
 
-Each row of Figure 11 changes one thing; the grey row at the top of each group is its reference.
+Each row of Figure 13 changes one thing; the grey row at the top of each group is its reference.
 
 - **Horizon.** Training on one-step windows makes the model worse at 15 steps (0.0329 against 0.0178) and planning drops to 27.8%. Ten-step windows give 33.9%. Five steps is a good middle: the planner looks 12 steps ahead, and the model has to stay sensible that far.
 - **Latent consistency.** Without it, the error under random actions barely changes, but planning falls to 23.7%. The planner feeds imagined latents to the readout, 12 steps deep. Latent consistency keeps those imagined latents looking like the encodings of real frames, which is the only kind of latent the readout and the policy were trained on.
 - **Images.** Without the image loss, planning reaches 38.1%, about the same. In the chunked model, removing the image decoder entirely gives 38.0% against 39.2%. The decoder is for *you*, so you can watch the imagination; the planner only reads states. It also costs about 10× in training time, which is why `scripts/run.sh` has a `PREDICT_IMAGE` switch: 1 to watch, 0 to go fast.
 - **Pixels only.** Without the state input, every policy drops to about 10% and the 15-step state error rises to 0.0838. A single frame doesn't show velocity, and 206 demonstrations are not much to learn vision from.
-- **Width.** Halving the latent to 64 numbers lowers planning to 36.3%. Doubling it to 256 doesn't help (35.2%) and makes the T's counterfactual error worse. 128 is enough for this task, which is why pico-WAM is 0.75M parameters and not more.
+- **Width of the latent.** Halving the latent to 64 numbers lowers planning to 36.3%. Doubling it to 256 doesn't help at 15 epochs (35.2%) and makes the T's counterfactual error worse. 128 numbers are enough for this task. What *was* too small is the action head, which Part 6 fixes.
 - **Fewer demos** make everything worse, as you'd expect: 24.5% planning with 100 demos, 19.0% with 50.
 - **A diffusion head** is worse at 15 epochs (mini-VLA 14.2%). A more expressive head needs more training; the MLP is the simple default.
 - **The chunked model's variants**, in the bottom group: 16-action chunks, averaging overlapping chunks, and a plain CNN instead of keypoints. None is clearly better than the default. When the simple choice works as well, keep the simple choice.
@@ -463,7 +500,7 @@ Each row of Figure 11 changes one thing; the grey row at the top of each group i
 
 ![Keypoints](figures/fig-pusht-keypoints.svg)
 
-*Figure 12. Spatial-softmax keypoints on an unseen episode. (a) A model that also gets the state. (b) A model that gets only the image. (c) How well the best keypoint tracks the disk and the T.*
+*Figure 14. Spatial-softmax keypoints on an unseen episode. (a) A model that also gets the state. (b) A model that gets only the image. (c) How well the best keypoint tracks the disk and the T.*
 
 With the state as input, the keypoints barely move: the best one tracks the disk with $R^2$ = 0.58 and the T with 0.87. Take the state away, and the same encoder learns keypoints that follow the scene: 0.78 for the disk and 0.92 for the T. The network only learns to look when looking is the only way to know where things are. If you ever see a vision encoder that seems to ignore the image, check what else it's being given.
 
@@ -471,7 +508,7 @@ With the state as input, the keypoints barely move: the best one tracks the disk
 
 ![Pilot](figures/fig-pusht-pilot.svg)
 
-*Figure 13. A matched pilot from pixels only: behavioral cloning, plus current-state supervision, plus future-state prediction. Each grey line is one run.*
+*Figure 15. A matched pilot from pixels only: behavioral cloning, plus current-state supervision, plus future-state prediction. Each grey line is one run.*
 
 Part 5's pixel-only row is a WAM that gets no state input, but still learns from true-state *targets*. Is it the prediction of the future that helps such a policy, or simply being told where things are now? To separate the two, I trained three models from pixels only, with matched windows, initializations, batches and number of updates, on five runs:
 
@@ -487,27 +524,52 @@ Supervising the current state adds 7.9 points; predicting the future adds −2.5
 
 ![Planning](figures/fig-pusht-planning.svg)
 
-*Figure 14. (a) Coverage of the policy alone and of four planners that use the same world model: the default, wider noise, three rounds of search, and three rounds with no policy to start from. The blue band is mini-VLA. (b) For each planner, how much closer to the target the model expected its chosen 12-step plan to bring the T, and how much closer it really came in the simulator.*
+*Figure 16. (a) Coverage of the policy alone and of four planners that use the same world model: the default, wider noise, three rounds of search, and three rounds with no policy to start from. The blue band is mini-VLA. (b) For each planner, how much closer to the target the model expected its chosen 12-step plan to bring the T, and how much closer it really came in the simulator.*
 
 ### 6.1 Planning beats the policy, if the search stays close
 
-At the study base, the WAM acting on its own covers 14.0% of the target at best, below mini-VLA's 24.2%. My guess is that the prediction losses compete with the policy for the shared latent. Planning with the same world model reaches 37.0%, better than mini-VLA in every run. Nothing new was trained: the same network is used differently.
+At the study base, the WAM acting on its own covers 14.0% of the target at best, below mini-VLA's 24.2%. My guess at the time: the prediction losses compete with the policy for the shared latent. Step 4 of 6.2 shows that guess was mostly wrong. Planning with the same world model reaches 37.0%, better than mini-VLA in every run. Nothing new was trained: the same network is used differently.
 
-So why not search harder? Figure 14 tries it on the same trained models: wider noise, three rounds of the cross-entropy method, and three rounds starting from standing still instead of from the policy. Coverage falls every time, down to 9.6% without the policy.
+So why not search harder? Figure 16 tries it on the same trained models: wider noise, three rounds of the cross-entropy method, and three rounds starting from standing still instead of from the policy. Coverage falls every time, down to 9.6% without the policy.
 
 Panel (b) shows why. Every 10 steps I take the plan the planner chose and run it in the real simulator from the same state. The model *believes* its plans get better as it searches harder: the expected improvement grows from 33.3 px to 82.1 px. In the simulator, the same plans improve nothing (between −1.9 and −0.1 px). A planner is an optimizer, and an optimizer pointed at an imperfect model finds the model's errors. Searching near the policy's plan keeps it in the region where the model has seen data.
 
-### 6.2 Three changes that make it succeed
+### 6.2 Four changes that make it succeed
 
 ![Recipe](figures/fig-pusht-recipe.svg)
 
-*Figure 15. Each row adds one change. (a) Best coverage of the target. (b) Success rate: episodes where the T covers more than 95% of the target. (c) Error on the T after 10 random-action steps; the dashed line is "the T stays put". The first four rows plan with my first planner, the others with the restarting planner.*
+*Figure 17. Each row adds one change. (a) Best coverage of the target. (b) Success rate: episodes where the T covers more than 95% of the target. (c) Error on the T after 10 random-action steps; the dashed line is "the T stays put". The first four rows plan with my first planner, the others with the restarting planner.*
 
-**1. Predict a few actions at a time.** With action chunks, the policy predicts the next 8 actions and executes 4 before asking again, as Diffusion Policy does. Mini-VLA goes from 24.2% to 40.2%, the reactive WAM from 14.0% to 23.5%, and the first episodes succeed. My intuition: human demonstrations pause and hesitate, and a policy that decides one step at a time can dither between two ways of pushing; committing to a short sequence keeps it moving.
+**1. Predict a few actions at a time.** With action chunks, the policy predicts the next 8 actions and executes 4 before asking again, as Diffusion Policy does:
+
+```mermaid
+flowchart LR
+    S1["step 0:<br/>predict a0 … a7"] --> X1["do a0, a1, a2, a3"]
+    X1 --> S2["step 4:<br/>predict a4 … a11"] --> X2["do a4, a5, a6, a7"]
+    X2 --> S3["step 8: …"]
+```
+
+*Figure 18. Action chunks: predict 8 actions, do the first 4, then predict again from the new observation.*
+
+Mini-VLA goes from 24.2% to 40.2%, the reactive WAM from 14.0% to 23.5%, and the first episodes succeed. My intuition: human demonstrations pause and hesitate, and a policy that decides one step at a time can dither between two ways of pushing; committing to a short sequence keeps it moving.
 
 **2. Train longer, and restart every search.** Training for 100 epochs instead of 15 makes the policies much better: mini-VLA covers 68.0% and succeeds in 62 of 300 episodes. The world model gets better too, with a 15-step error of 0.0112 instead of 0.0202. Yet planning fell from 39.2% to 20.2%. A better model made a worse planner.
 
-The bug was in my planner, not in the model. My first version reused its last plan: it started each search from the previous step's plan and kept that plan unless something scored better. Over a 300-step episode, that piles up hundreds of rounds of search on the same imagined future. It's the "search harder" experiment of 6.1 again, by accident. On development episodes, the plans it chose expected to bring the T 74 px closer to the target, while the simulator moved it 7 px further away. The fix is one line: start every search from the policy's own plan (`warm_start=False`, the default now).
+The bug was in my planner, not in the model. My first version reused its last plan: it started each search from the previous step's plan and kept that plan unless something scored better.
+
+```mermaid
+flowchart TB
+    subgraph W["first version: reuse the last plan"]
+      W1["step t: search near<br/>the plan from step t-1"] --> W2["keep the old plan unless<br/>something scores better"] --> W3["after hundreds of steps:<br/>a plan the model loves<br/>and the world doesn't"]
+    end
+    subgraph R["fixed version: restart"]
+      R1["step t: search near<br/>the policy's fresh plan"] --> R2["pick the best,<br/>do one action"] --> R3["the search never<br/>wanders far from the policy"]
+    end
+```
+
+*Figure 19. Why reusing the last plan goes wrong.*
+
+Over a 300-step episode, reusing the plan piles up hundreds of rounds of search on the same imagined future. It's the "search harder" experiment of 6.1 again, by accident. On development episodes, the plans it chose expected to bring the T 74 px closer to the target, while the simulator moved it 7 px further away. The fix is one line: start every search from the policy's own plan (`warm_start=False`, the default now).
 
 **3. Show the world model the pushes people didn't make.** Lesson 1 showed that the model needs to see other pushes, but scripted data hurt the policy. So I keep the human demos and *branch* them in the simulator (`scripts/branch_demos.py`):
 
@@ -516,20 +578,45 @@ The bug was in my planner, not in the model. My first version reused its last pl
 actions = np.clip(data["actions"][i : i + L] + args.noise * rng.standard_normal((L, 2)), -1.0, 1.0)
 ```
 
+![Branching a demonstration](figures/fig-pusht-branches.svg)
+
+*Figure 20. (a) A stretch of one human demonstration: the path of the disk, and where the person left the T. (b) The same stretch with its branches. Each branch replays the person's next 8 pushes with some noise added, and the simulator says where the disk and the T really end up.*
+
 The simulator says what really happens, and the env draws every new frame. The 206 demos become 6,013 extra branches, 48,104 transitions, and the T moves in a third of them. Branches are marked `is_expert = 0`, so only the world model learns from them; mini-VLA never sees them, because copying noisy pushes would only teach it the noise. The simulator is used once, to make data, and never while planning.
 
-With branches, the T's error under new pushes drops from 1.31× to 0.45× "the T stays put" (Figure 15c). For the first time, the model knows better than "nothing moves" what a new push does to the T.
+With branches, the T's error under new pushes drops from 1.31× to 0.45× "the T stays put" (Figure 17c). For the first time, the model knows better than "nothing moves" what a new push does to the T.
 
-**All together.** With chunks, branches and the restarting planner, still at 15 epochs, planning covers 51.5% and succeeds in 32 of 300 episodes, against 37.6% and 8 successes for mini-VLA trained in the same runs. The planner's mistakes shrink too: the gap between the imagined and the real final pose of the T falls from 47.6 px at the study base to 31.9 px.
+**Together, at 15 and then 100 epochs.** With chunks, branches and the restarting planner, still at 15 epochs, planning covers 51.5% and succeeds in 32 of 300 episodes, against 37.6% and 8 successes for mini-VLA trained in the same runs. Trained for 100 epochs, planning succeeds in 77, and the old reuse-the-last-plan planner, on the same models, in only 11. But the WAM's own policy is stuck: 7 successes, 23.2 points of coverage behind mini-VLA.
 
-**All three, trained for 100 epochs.** This is the default model in `scripts/run.sh`, and the one in the GIF at the top of the README. Planning now succeeds in 77 of 300 unseen episodes, with a best coverage of 56.8%. Mini-VLA, trained for 100 epochs on the same demos, succeeds in 57, but covers more of the target on average: 63.5%. So the planner finishes the job more often, and the plain policy gets close more often. My guess is that the planner's cost, the distance between the T's corners and the target's, rewards exactly the last few pixels of placement that success needs. I haven't tested that.
+**4. Give the policy a bigger head.** Until here, both models turned the latent into actions with one hidden layer of 128 numbers. That's small for a head that has to output 16 numbers, 8 two-dimensional actions, from the human demonstrations' messy pushes. I tried a few sizes:
 
-This run also confirms the two fixes:
+![How big should pico-WAM be](figures/fig-pusht-capacity.svg)
 
-- **The restart matters even more for a well-trained model.** On the same trained models, the planner that reuses its last plan reaches only 37.4% and 11 successes.
-- **The world model now knows what new pushes do.** Its error on the T under random pushes is 0.24× "the T stays put", and its 15-step state error is 0.0083.
+*Figure 21. Action-head and latent sizes, all trained like the row above with 100 epochs. The shaded row is the final model. (a) Best coverage. (b) Success rate. (c) Parameters of the WAM, split into encoders and dynamics, action head and image decoder.*
 
-One caution: these numbers move between runs. In the "chunks, 100 epochs" experiment, exactly the same mini-VLA configuration reached 68.0% and 62 successes. Three runs are enough to see big effects, not small ones.
+- **Three hidden layers of 512 helps everything.** Mini-VLA goes to 116 successes, the WAM's own policy from 7 to 85, and planning from 77 to 121.
+- **Bigger doesn't help further.** Three layers of 1024 or six layers of 512 add parameters without improving planning, and a flow-matching head of the same size does worse.
+- **The latent was fine.** A latent of 256 helps the small head, but adds nothing once the head is 3×512.
+
+This also corrects something I believed earlier. I thought the WAM's own policy was weak because the prediction losses compete with it for the shared latent. With the bigger head the gap to mini-VLA shrinks from 23.2 to 4.4 points of coverage: it was mostly the small head. The price is size: the head has 599,568 parameters, so the WAM grows to 1.33 million, or 0.96 million without the image decoder.
+
+**The final model.** This is the default in `scripts/run.sh`, and the one in the GIF at the top of the README. Planning succeeds in 121 of 300 unseen episodes, with a best coverage of 78.4%. Mini-VLA succeeds in 116, with 81.6%. They're now close; mini-VLA wins two of the three runs on successes, planning wins the third by a lot. The WAM's own policy, without planning, succeeds in 85. And the world model is the best in the study: its error on the T under random pushes is 0.22× "the T stays put". Here's one of its successful episodes:
+
+![A successful episode](figures/fig-pusht-episode.svg)
+
+*Figure 22. The final model planning on an unseen start. (a) Six moments of the episode, with how much of the target the T covers. (b) Coverage over time; the episode succeeds when it passes 95%. Notice the long middle stretch: the T partly covers the target, slips off, and the planner has to walk around and push again.*
+
+One caution: these numbers move between runs. In the "chunks, 100 epochs" experiment, exactly the same mini-VLA configuration reached 68.0% and 62 successes, against 63.5% and 57 in the next run. Three runs are enough to see big effects, not small ones. And I chose the head size by looking at these same test episodes, so treat 3×512 as a good choice, not a measured optimum.
+
+### 6.3 Where the world model really pays off: pixels only
+
+With the state as input, mini-VLA is a strong baseline: the state tells it exactly where the T is. Take the state away, so both models see only the camera image and the instruction, and the picture changes completely:
+
+![Pixels only](figures/fig-pusht-pixels.svg)
+
+*Figure 23. The final configuration with state and image input, and the same configuration with image input only. (a) Best coverage. (b) Success rate. Each dot is one run.*
+
+From pixels, mini-VLA covers 7.1% of the target and never succeeds. The WAM's own policy covers 56.4% and succeeds in 43 episodes, and planning in 46. A single frame doesn't show which way the disk is moving, and mini-VLA has only the action labels to learn from. The WAM also has to predict states, images and its own future latents, which forces its encoder to work out where things are. That's the Lesson 4 pilot again, at full scale. To be fair, the WAM here also learns from the branches, which mini-VLA can't use, so this compares the whole WAM recipe, not one loss.
 
 ---
 
@@ -537,12 +624,13 @@ One caution: these numbers move between runs. In the "chunks, 100 epochs" experi
 
 ![Efficiency](figures/fig-pusht-efficiency.svg)
 
-*Figure 16. (a) Parameters per module. (b) Time for one training step, batch 64. (c) Time to imagine k steps, with and without decoding images, compared with one policy action. Measured on one CPU thread of a laptop.*
+*Figure 24. The final model. (a) Parameters per module. (b) Time for one training step, batch 64. (c) Time to imagine k steps, with and without decoding images, compared with one policy action. Measured on one CPU thread of a laptop.*
 
-- **Acting is cheap.** One policy action takes 0.46 ms, for the WAM and mini-VLA alike, because the reactive policy never calls the world model.
-- **Planning is cheap too.** One planning step imagines 256 candidate futures of 12 steps and takes 32 ms, well inside Push-T's 100 ms control period. For comparison, DINO-WM reports 53 s for one plan with the cross-entropy method on a datacenter GPU, with a different planning setup.
-- **Training is where pixels cost you.** One WAM training step costs 2.96 s against 69 ms for mini-VLA. Remove the image decoder and it drops to 0.27 s, while the parameter count halves.
-- **The whole study is small.** Every run trains three seeds side by side on one cluster GPU, and most runs take one to two hours with all their tests. All 30 Push-T runs together took about 60 GPU-hours.
+- **Most parameters sit in the action head.** Of the WAM's 1,330,923 parameters, 599,568 are the 3×512 action head and 375,811 the image decoder; the encoders, the dynamics and the readouts together are the small rest.
+- **Acting is cheap.** One policy action takes 0.47 ms, for the WAM and mini-VLA alike, because the reactive policy never calls the world model.
+- **Planning is cheap too.** One planning step imagines 256 candidate futures of 12 steps and takes 36 ms, well inside Push-T's 100 ms control period. For comparison, DINO-WM reports 53 s for one plan with the cross-entropy method on a datacenter GPU, with a different planning setup.
+- **Training is where pixels cost you.** One WAM training step costs 3.18 s against 73 ms for mini-VLA. Remove the image decoder and it drops to 0.29 s. On the cluster, a full run of the final model takes 4 h 11 min with the decoder and 1 h 03 min without it.
+- **The whole study is small.** Every run trains three seeds side by side on one cluster GPU. All 37 Push-T runs together took about 90 GPU-hours.
 
 If you want your WAM to be fast:
 
@@ -554,11 +642,12 @@ If you want your WAM to be fast:
 
 ## Part 8 — Honest limitations
 
-- **Success is still the exception.** The final planning WAM succeeds in about a quarter of episodes, 77 of 300, and mini-VLA still covers more of the target on average. pico-WAM is built for learning how WAMs behave, not for topping a benchmark.
+- **Success is still the exception.** The final planning WAM succeeds in about two of every five episodes, 121 of 300, and mini-VLA is about as good when it can see the state. pico-WAM is built for learning how WAMs behave, not for topping a benchmark.
 - **The branches need a simulator.** On a real robot you can't replay a state and push differently; you'd need play data or deliberately perturbed demonstrations instead.
 - **Privileged state.** With the state as input, the policy sees the T's exact pose. The pixel-only experiments remove that input, but the WAM still learns from true-state targets.
 - **The planner's cost is hand-written.** It knows the target pose and measures distances in pixels; a learned value function would be more general.
 - **Three runs per configuration** (five in the pilot) are enough to see big effects, not small ones, and many of the comparisons use 15-epoch models.
+- **The head size was picked on the test episodes.** I compared a handful of sizes on the same unseen starts I report, so 3×512 is a good choice, not a measured optimum.
 
 ---
 
@@ -576,9 +665,13 @@ Some exercises, in rough order of difficulty. Everything you need is already in 
 
 ## Glossary
 
+- **Action chunk:** a short sequence of future actions the policy predicts at once; pico-WAM predicts 8 and does the first 4.
+- **Action head:** the last part of the policy, a small network that turns the latent into actions.
 - **Behavioral cloning (BC):** training a policy to copy expert actions, as supervised learning.
+- **Branching:** replaying a demonstration from one of its states with slightly different actions, and letting the simulator say what happens.
 - **Counterfactual prediction:** predicting what *would* happen under actions that were not taken.
 - **Coverage:** the fraction of Push-T's target covered by the T; an episode's score is the best coverage it reaches.
+- **Cross-entropy method:** a simple search: sample many candidate plans, keep the best few, sample new candidates around those, and repeat.
 - **Factual prediction:** predicting what *did* happen, given the recorded actions.
 - **Imagination, rollout:** applying the dynamics model repeatedly without new observations.
 - **Inverse dynamics:** inferring the action that moved the world from one state to the next.
@@ -588,6 +681,7 @@ Some exercises, in rough order of difficulty. Everything you need is already in 
 - **MPC, model-predictive control:** planning by imagining candidate action sequences with a model and executing the first action of the best one.
 - **Spatial softmax:** turning a feature map into the expected $(x, y)$ position of its activation.
 - **VLA:** vision-language-action model, a policy that maps images and instructions to actions.
+- **Warm start:** starting each planning search from the previous step's plan; pico-WAM's planner restarts from the policy's plan instead.
 - **WAM:** world action model, a policy that also predicts how its actions change the world.
 
 ## FAQ
@@ -608,36 +702,43 @@ Some exercises, in rough order of difficulty. Everything you need is already in 
 bash scripts/run.sh   # 3 runs of the final model: data, branches, train WAM + mini-VLA, evaluate, test, plan, visualize, summarize
 ```
 
-The defaults at the top of `scripts/run.sh` are the final model of Part 6. Every other experiment lives on its own git branch, which changes **one line** of its parent's configuration block; check out the branch and run the same command. Results land in `results/pusht/`.
+The defaults at the top of `scripts/run.sh` are the final model of Part 6, and every other experiment is the same command with a few settings changed. Results land in `results/pusht/`; the planner that reuses its last plan is always tested too, in `wam_mpc_warm_test.json`.
 
-| Results folder | What changes | Parent | Branch |
-|---|---|---|---|
-| `final` | 100 epochs | `branched-restart-planner` | `orx/push-t-branched-data-planner-restarts-100-epochs` |
-| `baseline` | the study base: one action per step, 15 epochs, human demos only | | `orx/push-t-study-base-planning-extras` |
-| `horizon-1`, `horizon-10` | `HORIZON=1`, `HORIZON=10` | `baseline` | `orx/push-t-horizon-h-1`, `orx/push-t-horizon-h-10` |
-| `no-latent` | `LATENT_WEIGHT=0.0` | `baseline` | `orx/push-t-no-latent-consistency` |
-| `no-image` | `IMAGE_WEIGHT=0.0` | `baseline` | `orx/push-t-no-image-loss` |
-| `pixel-input` | `STATE_INPUT=0` | `baseline` | `orx/push-t-pixel-input` |
-| `demos-100`, `demos-50` | `DEMOS=100`, `DEMOS=50` | `baseline` | `orx/push-t-100-demos`, `orx/push-t-50-demos` |
-| `expert-p0`, `expert-p0.1`, `expert-p0.3` | `PUSHT_DATA=expert` with `RANDOM_ACTION_PROB` 0.0, 0.1, 0.3 | `baseline` | `orx/push-t-scripted-expert-no-bursts`, `-bursts-0-1`, `-bursts-0-3` |
-| `mixed-p0.3` | `PUSHT_DATA=mixed`, `RANDOM_ACTION_PROB=0.3` | `baseline` | `orx/push-t-human-scripted-bursts` |
-| `diffusion-head` | `ACTION_HEAD=diffusion` | `baseline` | `orx/push-t-diffusion-head` |
-| `wider-model` | `D_MODEL=256` | `baseline` | `orx/push-t-wider-model-d-model-256` |
-| `epochs-100` | `EPOCHS=100` | `baseline` | `orx/push-t-100-epochs` |
-| `planner-budget` | `PLAN_SWEEP=1`: three more planners | `baseline` | `orx/push-t-planner-budget` |
-| `supervision-pilot` | `MODE=supervision`, five seeds | `baseline` | `orx/push-t-supervision-pilot` |
-| `action-chunks` | `ACTION_CHUNK=8` | `baseline` | `orx/push-t-action-chunks` |
-| `chunks-k16` | `ACTION_CHUNK=16` | `action-chunks` | `orx/push-t-chunks-k-16-execute-8` |
-| `chunks-temporal-ensembling` | `TEMPORAL_ENSEMBLE=1` | `action-chunks` | `orx/push-t-temporal-ensembling` |
-| `chunks-dmodel-64` | `D_MODEL=64` | `action-chunks` | `orx/push-t-chunks-d-model-64` |
-| `chunks-plain-cnn` | `IMAGE_ENCODER=cnn` | `action-chunks` | `orx/push-t-chunks-plain-cnn-encoder` |
-| `chunks-no-decoder` | `PREDICT_IMAGE=0` | `action-chunks` | `orx/push-t-chunks-no-image-decoder` |
-| `chunks-epochs-100` | `EPOCHS=100` | `action-chunks` | `orx/push-t-chunks-100-epochs` |
-| `chunks-restart-planner` | the planner restarts from the policy | `action-chunks` | `orx/push-t-chunks-planner-restarts-from-the-policy` |
-| `chunks-branched` | `BRANCHES=1` | `action-chunks` | `orx/push-t-chunks-simulator-branched-data` |
-| `branched-restart-planner` | the planner restarts from the policy | `chunks-branched` | `orx/push-t-branched-data-planner-restarts-from-the-p` |
+| Results folder | What it is | Command |
+|---|---|---|
+| `final` | the final model: the defaults | `bash scripts/run.sh` |
+| `baseline` | the study base | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 bash scripts/run.sh` |
+| `horizon-1`, `horizon-10` | imagination window $H$ = 1 or 10 | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 HORIZON=1 bash scripts/run.sh` |
+| `no-latent` | no latent consistency | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 LATENT_WEIGHT=0 bash scripts/run.sh` |
+| `no-image` | no image loss | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 IMAGE_WEIGHT=0 bash scripts/run.sh` |
+| `pixel-input` | no state input | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 STATE_INPUT=0 bash scripts/run.sh` |
+| `demos-100`, `demos-50` | fewer human demos | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 DEMOS=100 bash scripts/run.sh` |
+| `expert-p0` | scripted expert, no random bursts | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 PUSHT_DATA=expert RANDOM_ACTION_PROB=0 bash scripts/run.sh` |
+| `expert-p0.1`, `expert-p0.3` | scripted expert with random bursts | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 PUSHT_DATA=expert RANDOM_ACTION_PROB=0.1 bash scripts/run.sh` |
+| `mixed-p0.3` | human demos plus scripted bursts | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 PUSHT_DATA=mixed RANDOM_ACTION_PROB=0.3 bash scripts/run.sh` |
+| `diffusion-head` | diffusion action head | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 ACTION_HEAD=diffusion bash scripts/run.sh` |
+| `wider-model` | latent of 256 | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 D_MODEL=256 bash scripts/run.sh` |
+| `epochs-100` | 100 epochs | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 EPOCHS=100 bash scripts/run.sh` |
+| `planner-budget` | three bigger search budgets | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 PLAN_SWEEP=1 bash scripts/run.sh` |
+| `supervision-pilot` | the matched pilot, five runs | `ACTION_CHUNK=1 EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 MODE=supervision SEEDS='0 1 2 3 4' bash scripts/run.sh` |
+| `action-chunks`, `chunks-restart-planner` | predict 8 actions, execute 4 | `EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 bash scripts/run.sh` |
+| `chunks-k16` | predict 16, execute 8 | `EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 ACTION_CHUNK=16 bash scripts/run.sh` |
+| `chunks-temporal-ensembling` | average overlapping chunks | `EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 TEMPORAL_ENSEMBLE=1 bash scripts/run.sh` |
+| `chunks-dmodel-64` | latent of 64 | `EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 D_MODEL=64 bash scripts/run.sh` |
+| `chunks-plain-cnn` | plain CNN image encoder | `EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 IMAGE_ENCODER=cnn bash scripts/run.sh` |
+| `chunks-no-decoder` | no image decoder | `EPOCHS=15 BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 PREDICT_IMAGE=0 bash scripts/run.sh` |
+| `chunks-epochs-100` | 100 epochs | `BRANCHES=0 POLICY_HIDDEN=128 POLICY_LAYERS=1 bash scripts/run.sh` |
+| `chunks-branched`, `branched-restart-planner` | simulator branches | `EPOCHS=15 POLICY_HIDDEN=128 POLICY_LAYERS=1 bash scripts/run.sh` |
+| `branched-restart-100-epochs` | the same, 100 epochs | `POLICY_HIDDEN=128 POLICY_LAYERS=1 bash scripts/run.sh` |
+| `head-3x1024` | action head 3×1024 | `POLICY_HIDDEN=1024 bash scripts/run.sh` |
+| `head-6x512` | action head 6×512 | `POLICY_LAYERS=6 bash scripts/run.sh` |
+| `flow-head-3x512` | flow-matching head | `ACTION_HEAD=flow bash scripts/run.sh` |
+| `latent-256` | latent 256, head 1×128 | `D_MODEL=256 POLICY_HIDDEN=128 POLICY_LAYERS=1 bash scripts/run.sh` |
+| `head-3x512-latent-256` | latent 256, head 3×512 | `D_MODEL=256 bash scripts/run.sh` |
+| `head-3x512-no-decoder` | no image decoder | `PREDICT_IMAGE=0 bash scripts/run.sh` |
+| `pixel-input-head-3x512` | no state input | `STATE_INPUT=0 bash scripts/run.sh` |
 
-The results of every run are in `docs/results/pusht/`, with the commit and run of each folder in its `README.md`. `python docs/figures/pusht_figures.py` rebuilds every figure in this tutorial from them, and `python docs/figures/pusht_numbers.py` prints every number.
+For a pair of folders, the command shows the first one; change the one number for the second. Each experiment was originally run from its own git branch, and the branches are all merged into `main` now. `docs/results/pusht/README.md` lists the exact branch, commit and run of every folder, if you want the code exactly as it ran. The results of every run are in `docs/results/pusht/`. `python docs/figures/pusht_figures.py` rebuilds every figure in this tutorial from them, and `python docs/figures/pusht_numbers.py` prints every number.
 
 ## References
 

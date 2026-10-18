@@ -145,6 +145,7 @@ def main():
             put("PT" + prefix + "ParamsVlaM", d["parameters"]["vla_total"] / 1e6, "{:.2f}")
             put("PT" + prefix + "ParamsHead", d["parameters"]["wam"]["policy_head"], "{:,d}")
             if "image_decoder" in d["parameters"]["wam"]:
+                put("PT" + prefix + "ParamsDecoder", d["parameters"]["wam"]["image_decoder"], "{:,d}")
                 put("PT" + prefix + "ParamsNodecM", (d["parameters"]["wam_total"] - d["parameters"]["wam"]["image_decoder"]) / 1e6, "{:.2f}")
 
     laptop = os.path.join(RESULTS, "final", "efficiency-laptop", "efficiency.json")

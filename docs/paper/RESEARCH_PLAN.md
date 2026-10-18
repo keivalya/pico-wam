@@ -36,7 +36,9 @@ Stage 4's step beyond the toy was taken with Push-T, trained on LeRobot's 206 hu
 - Planning with the learned dynamics is the first measured control benefit of the world model. Plan checks against the simulator show that more search, or a warm-started search, exploits model errors.
 - The matched pilot again attributes most of the auxiliary gain to current-state supervision; future-state prediction added nothing on Push-T.
 
-Still open: oracle-dynamics and direct-state planners with the same cost, a history-based baseline, a learned cost, and branches that a real robot could collect.
+A capacity round on top of the 100-epoch model then showed that the action head, one hidden layer of 128 units, was the bottleneck: three layers of 512 raised every policy and nearly closed the gap between the WAM's own policy and mini-VLA, while wider or deeper heads and a wider latent did not help further. Without state input, only the WAM learns to push the T. The head sizes were compared on the test starts.
+
+Still open: oracle-dynamics and direct-state planners with the same cost, a history-based baseline, a learned cost, head sizes chosen on validation starts, and branches that a real robot could collect.
 
 ## Nearest prior work and novelty risk
 

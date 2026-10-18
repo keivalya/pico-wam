@@ -4,7 +4,7 @@
 
 </div>
 
-pico-WAM is a compact World Action Model (WAM): a 0.75M-parameter model for studying how a robot policy and a world model interact. One shared latent state feeds a policy, an action-conditioned transition model, and state and image readouts, so the same model both acts and predicts how the world will change.
+pico-WAM is a compact World Action Model (WAM): a model of about a million parameters for studying how a robot policy and a world model interact. One shared latent state feeds a policy, an action-conditioned transition model, and state and image readouts, so the same model both acts and predicts how the world will change.
 
 Its example task is **Push-T**, the benchmark from [Diffusion Policy](https://diffusion-policy.cs.columbia.edu/): a blue disk has to push a grey T-shaped block until it covers the green target. pico-WAM learns it from the 206 human demonstrations of LeRobot's [Push-T dataset](https://huggingface.co/datasets/lerobot/pusht).
 
@@ -40,8 +40,10 @@ On Push-T:
 - **Predictions are good along human actions, and poor under new ones.** Fifteen steps ahead, the state error is 0.0178 nMSE, 44× lower than assuming nothing moves. Under pushes people never made, the model predicts the T worse than assuming it stays put: 1.36× that error.
 - **Showing the world model other pushes fixes it.** Branching every human demonstration in the simulator, with the human's actions slightly perturbed, brings the T's error down to 0.45× "stays put". Only the world model learns from the branches.
 - **Planning with the world model beats the policy, if the search stays close to the policy.** A stronger search makes the model expect 82.1 px of improvement from its plans while the simulator delivers −1.9 px: the planner finds the model's errors. A planner that reuses its last plan drifts the same way over an episode, so the final planner restarts every search from the policy's plan.
-- **Three simple changes make it succeed.** With action chunks, branched data and a planner that restarts from the policy, the planning WAM succeeds in 77 of 300 unseen episodes, against 57 for the behavioral-cloning baseline mini-VLA. Mini-VLA reaches a higher mean best coverage, 63.5% against 56.8%.
-- **It's cheap.** A planning step, 256 imagined futures of 12 steps, takes 32 ms on one laptop CPU thread. A latent of 64 numbers is worse and 256 is no better than 128, and the image decoder is not needed for planning. The whole Push-T study took about 60 GPU-hours.
+- **The action head was the bottleneck.** Widening the policy's head from one hidden layer of 128 to three of 512 is the biggest single improvement. Planning goes from 77 to 121 successes in 300 unseen episodes, and the WAM's own policy from 7 to 85. Wider or deeper heads, and a wider latent, add parameters without helping.
+- **Four simple changes make it succeed.** With action chunks, branched data, a planner that restarts from the policy and the 3×512 head, the planning WAM succeeds in 121 of 300 unseen episodes and the behavioral-cloning baseline mini-VLA in 116.
+- **Without the state, only the WAM works.** From images and the instruction alone, the WAM succeeds in 46 episodes by planning and 43 on its own; mini-VLA succeeds in 0.
+- **It's cheap.** The final WAM has 1.33 million parameters, 0.96 million without its image decoder, which the planner does not need. A planning step, 256 imagined futures of 12 steps, takes 36 ms on one laptop CPU thread, and the whole Push-T study took about 90 GPU-hours.
 
 On the point-mass world:
 
@@ -58,7 +60,7 @@ pico-WAM is a VLA-style policy with a world model trained alongside it. The poli
 
 - [models/encoders.py](models/encoders.py) encodes the 64×64 image (a three-layer CNN with 16 spatial-softmax keypoints, or a plain pooled CNN), the instruction (a GRU) and the low-dimensional state (an MLP)
 - [models/fusion.py](models/fusion.py) fuses them with an MLP and layer norm into a 128-dimensional latent `z_t`
-- [models/action_heads.py](models/action_heads.py) turns `z_t` into an action, or a chunk of the next K actions, with an MLP head; [diffusion](models/diffusion_head.py) and [flow-matching](models/flow_matching_head.py) heads are also included (the paper's control experiments use the MLP head)
+- [models/action_heads.py](models/action_heads.py) turns `z_t` into an action, or a chunk of the next K actions, with an MLP head, three hidden layers of 512 by default; [diffusion](models/diffusion_head.py) and [flow-matching](models/flow_matching_head.py) heads are also included (the paper's control experiments use the MLP head)
 - [models/dynamics_head.py](models/dynamics_head.py) holds the transition model, a residual MLP `z_t+1 = LN(z_t + MLP[z_t, a_t])`, and a *linear* `StateReadout` that maps any latent, encoded or predicted, to the physical state
 - [models/image_decoder.py](models/image_decoder.py) decodes any latent into an image, predicted as a residual on the training-set mean image
 - [models/losses.py](models/losses.py) combines the action, state, image and latent-consistency losses
@@ -140,7 +142,7 @@ python -m scripts.collect_data \
 
 ## Train your WAM model
 
-Train the policy and the world model together, on the demonstrations plus their branches. The final configuration predicts chunks of 8 actions, executing 4 before predicting again, and trains for 100 epochs. Use a GPU if you have one: `--device auto` picks CUDA or Apple's MPS. Leave out `--predict_image` to train about five times faster: the image decoder lets you watch the model's imagination, but the planner does not need it.
+Train the policy and the world model together, on the demonstrations plus their branches. The final configuration predicts chunks of 8 actions, executing 4 before predicting again, with an action head of three hidden layers of 512, and trains for 100 epochs. Use a GPU if you have one: `--device auto` picks CUDA or Apple's MPS. Leave out `--predict_image` to train about five times faster: the image decoder lets you watch the model's imagination, but the planner does not need it.
 
 ```
 python -m scripts.train \
@@ -148,6 +150,8 @@ python -m scripts.train \
   --model_type wam \
   --action_head mlp \
   --action-chunk 8 \
+  --policy-hidden 512 \
+  --policy-layers 3 \
   --predict_state \
   --predict_image \
   --epochs 100 \
@@ -188,7 +192,7 @@ python -m scripts.visualize_rollout --checkpoint checkpoints/wam.pt --video --gi
 bash scripts/run.sh
 ```
 
-On one V100 GPU, the three runs of the final configuration take about three hours, including all tests. Set `PREDICT_IMAGE=0` to skip the image decoder and train about five times faster; the planner does not need it. In the stored run, the planning WAM succeeds in 77 of 300 unseen episodes and mini-VLA in 57, and the world model predicts the state 15 steps ahead with nMSE 0.0083, against 0.4973 for assuming nothing moves.
+On one V100 GPU, the three runs of the final configuration take about four hours, including all tests. Set `PREDICT_IMAGE=0` to skip the image decoder: the run then takes about an hour, and the planner does not need the decoder. In the stored run, the planning WAM succeeds in 121 of 300 unseen episodes and mini-VLA in 116, and the world model predicts the state 15 steps ahead with nMSE 0.0094, against 0.4973 for assuming nothing moves.
 
 ## Reproducing the paper
 
@@ -196,16 +200,17 @@ Stored results for every experiment are in [docs/results/](docs/results/): the p
 
 | Paper result | Script | Stored outputs |
 |---|---|---|
-| Push-T: prediction, data, planning, variants and the final configuration | `scripts/run.sh` on each experiment's branch | `docs/results/pusht/<experiment>/` |
+| Push-T: prediction, data, planning, variants, model size and the final configuration | `scripts/run.sh` with each experiment's settings | `docs/results/pusht/<experiment>/` |
 | Push-T: data checks | `python -m scripts.pusht_data_checks --dataset data/pusht.npz --output docs/results/pusht/data_checks.json` | `docs/results/pusht/data_checks.json` |
 | Push-T: figures and numbers | `python docs/figures/pusht_figures.py`, `python docs/figures/pusht_numbers.py` | `docs/figures/fig-pusht-*`, `docs/paper/pusht-numbers.tex` |
+| Push-T: illustrations, from a trained run | `python docs/figures/export_illustrations.py --run-dir results/pusht/seed0 --out docs/results/pusht/final/figure-data` | `docs/results/pusht/final/figure-data/` |
 | Point mass: prediction, data coverage, ablations and policy success | `scripts/run_toy.sh`, then `python -m scripts.summarize_runs --root results` | `docs/results/<experiment>/` |
 | Point mass: matched-supervision pilot | `scripts/hpc/supervision_pilot.sbatch` (Slurm), which runs `scripts/supervision_ablation.py` | [docs/results/supervision-pilot/](docs/results/supervision-pilot/README.md) |
 | Point mass: affine dynamics diagnostic | `python3 scripts/research_audit.py --seeds 5 --output docs/results/research-audit` | [docs/results/research-audit/](docs/results/research-audit/README.md) |
 | Point mass: parameter and runtime benchmark | `python docs/figures/benchmark_efficiency.py --run-dir <dir with wam.pt, vla.pt, toy.npz>` | `docs/results/efficiency/` |
 | Point mass: figures | `python docs/figures/make_figures.py` | `docs/figures/` |
 
-Each Push-T experiment is a git branch that changes one line of its parent's configuration block in `scripts/run.sh`; the [tutorial](docs/pico-wam-paper.md#reproducing-everything) lists them all. Each point-mass experiment changes one setting of `scripts/run_toy.sh` through an environment variable, for example:
+Each Push-T experiment is `scripts/run.sh` with a few settings changed, for example `PREDICT_IMAGE=0 bash scripts/run.sh`; the [tutorial](docs/pico-wam-paper.md#reproducing-everything) lists the command for every results folder. Each point-mass experiment changes one setting of `scripts/run_toy.sh` through an environment variable, for example:
 
 ```sh
 RANDOM_ACTION_PROB=0.0 bash scripts/run_toy.sh   # expert-only data

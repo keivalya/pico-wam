@@ -17,14 +17,14 @@ Files in a seed folder:
 | `wam_mpc_*_test.json` | the planner-budget variants: `wide`, `cem` and `noprior` |
 
 `data_checks.json` checks the converted LeRobot data against the simulator
-(`scripts/pusht_data_checks.py`). `baseline/` and `final/` also hold the linear-model audit
+(`scripts/pusht_data_checks.py`). `baseline/`, `final/` and the 100-epoch folders also hold the linear-model audit
 (`dynamics_audit.json`), the data behind the qualitative figures (`figure-data/`), and
 the compute costs on a GPU node (`efficiency/`); `baseline/` also has them on one thread
 of a laptop CPU (`efficiency-laptop/`).
 
 ## Where each folder comes from
 
-Each experiment is a git branch that changes one setting of its parent in
+Each experiment was run from a git branch that changes one setting of its parent in
 `scripts/run.sh`. All runs used `bash scripts/run.sh` on one GPU of the Explorer cluster.
 
 | Folder | Change from its parent | Parent | Branch | Commit | Run |
@@ -56,11 +56,26 @@ Each experiment is a git branch that changes one setting of its parent in
 | `chunks-branched` | world model also learns from simulator branches of the demos | `action-chunks` | `orx/push-t-chunks-simulator-branched-data` | 40c756f | ef4c299c |
 | `chunks-restart-planner` | each plan search restarts from the policy's plan | `action-chunks` | `orx/push-t-chunks-planner-restarts-from-the-policy` | 580cf45 | e944bedd |
 | `branched-restart-planner` | branched data and the restarting planner | `chunks-branched` | `orx/push-t-branched-data-planner-restarts-from-the-p` | 4946f33 | a9587dbf |
-| `final` | 100 epochs: the final configuration, and the defaults of `scripts/run.sh` | `branched-restart-planner` | `orx/push-t-branched-data-planner-restarts-100-epochs` | 0aa97c2 | 0378c41c |
+| `branched-restart-100-epochs` | 100 epochs | `branched-restart-planner` | `orx/push-t-branched-data-planner-restarts-100-epochs` | 0aa97c2 | 0378c41c |
+| `final` | action head with 3 hidden layers of 512: the final configuration, and the defaults of `scripts/run.sh` | `branched-restart-100-epochs` | `orx/push-t-bigger-policy-head-3x512-mlp` | cbd8ead | 09fe70a3 |
+| `head-3x1024` | action head 3 x 1024 | `final` | `orx/push-t-policy-head-3x1024` | 7f79088 | 3ebd6c3a |
+| `head-6x512` | action head 6 x 512 | `final` | `orx/push-t-policy-head-6x512` | 6e6178c | 363ef8e6 |
+| `flow-head-3x512` | flow-matching action head, 3 x 512 | `branched-restart-100-epochs` | `orx/push-t-flow-matching-policy-head-3x512` | 05e036e | 2b61d201 |
+| `latent-256` | latent width 256, dynamics 512 wide, one-layer head | `branched-restart-100-epochs` | `orx/push-t-scale-up-2x-wider-latent` | 2e70aa7 | 12b3b471 |
+| `head-3x512-latent-256` | latent width 256 | `final` | `orx/push-t-3x512-head-2x-wider-latent` | c0dc7ae | a336b859 |
+| `head-3x512-no-decoder` | no image decoder | `final` | `orx/push-t-3x512-head-no-image-decoder` | 27f3acc | d75345a4 |
+| `pixel-input-head-3x512` | images and language only, no state input | `final` | `orx/push-t-pixel-input-3x512-head` | 7fe8633 | 5f3cf816 |
 
 The `planner-budget` job hit its 6-hour limit after all three seeds had been tested,
 while computing the extras, so it has no `summary.json`; its numbers are read from the
 seed files like every other folder. The supervision pilot's seed folders are named
 `seed-0` to `seed-4` and hold `ablation/results.json`.
 
-Run ids are the first 8 characters of the cluster run ids.
+`final/figure-data/` also holds the data behind the illustrations, recorded from the final
+model's first seed by `docs/figures/export_illustrations.py`: a branched demonstration
+(`branches.npz`), one planning step with all its candidates (`planner.npz`), and a
+successful planning episode (`episode.npz`).
+
+All the experiment branches are merged into `main`, where each experiment is the same
+`bash scripts/run.sh` with a few settings changed; the tutorial lists the command for every
+folder. Run ids are the first 8 characters of the cluster run ids.

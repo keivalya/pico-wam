@@ -803,22 +803,24 @@ def fig_episode():
     states, cov = d["states"], d["coverage"]
     T = len(states) - 1
     picks = np.linspace(0, T, 6).round().astype(int)
-    fig = plt.figure(figsize=(W, 0.32 * W), layout="constrained")
-    gs = fig.add_gridspec(1, 2, width_ratios=[4.0, 1.1])
+    fig = plt.figure(figsize=(W, 0.5 * W), layout="constrained")
+    gs = fig.add_gridspec(2, 1, height_ratios=[1.0, 0.62])
     sub = gs[0].subgridspec(1, len(picks), wspace=0.03)
     first = None
     for c, t in enumerate(picks):
         a = fig.add_subplot(sub[0, c])
         draw_scene(a, states[t])
-        a.text(0.5, 1.02, f"$t={t}$, {100 * cov[t]:.0f}%", transform=a.transAxes, ha="center", va="bottom", fontsize=6)
+        a.text(0.5, 1.02, f"$t={t}$, {100 * cov[t]:.0f}%", transform=a.transAxes, ha="center", va="bottom", fontsize=6.5)
         first = first or a
     ax = fig.add_subplot(gs[1])
     ax.plot(np.arange(len(cov)), 100 * cov, color=PLAN, lw=1.1)
     ax.axhline(95, color=REF, lw=0.8, ls="--")
-    ax.text(2, 96.5, "success", color=REF, fontsize=5.5, va="bottom")
-    ax.set_ylim(0, 105)
+    ax.text(2, 96.5, "success", color=REF, fontsize=6, va="bottom")
+    ax.scatter(picks, 100 * cov[picks], s=8, color=TRUE, zorder=3, lw=0)
+    ax.set_ylim(0, 110)
+    ax.set_xlim(0, T)
     ax.set_xlabel("timestep")
-    ax.set_ylabel("coverage of the target, %")
+    ax.set_ylabel("coverage, %")
     fs.panel_labels([first, ax], pad=7.0)
     finish(fig, "fig-pusht-episode")
 
