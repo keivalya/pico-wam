@@ -42,6 +42,8 @@ def parse_args():
     parser.add_argument("--lookahead", type=int, default=5, help="Imagination steps shown in the video.")
     parser.add_argument("--execute-steps", type=int, default=None,
                         help="With action chunks of K actions: how many to execute before predicting again (default K // 2).")
+    parser.add_argument("--temporal-ensemble", action="store_true",
+                        help="With action chunks: predict a chunk every step and average all chunks' guesses for it (ACT).")
     parser.add_argument("--planner", type=str, default="policy", choices=["policy", "mpc"],
                         help="policy: act with the action head; mpc: plan with the world model (scripts/plan.py, Push-T).")
     parser.add_argument("--planner-config", type=str, default="{}",
@@ -140,6 +142,7 @@ def main():
         if planner is not None:
             planner.reset()
         queue = []   # actions of the current chunk still to execute
+        chunks = []  # temporal ensembling: the last K predicted chunks, oldest first
         while not done and step < max_steps:
             img_t = to_tensor(img, size, device)
             state_t = torch.from_numpy(np.asarray(state)).float().unsqueeze(0).to(device)
@@ -148,7 +151,17 @@ def main():
                 frames.append(mind_frame(model, img_t, text_ids, state_t, args.lookahead)
                               if model.is_wam else to_np_img(img_t[0]))
 
-            if planner is None and model.config.get("action_chunk", 1) > 1:
+            K = model.config.get("action_chunk", 1)
+            if planner is None and K > 1 and args.temporal_ensemble:
+                # ACT's temporal ensembling: predict a fresh chunk every step and keep the
+                # last K; the chunk predicted i steps ago guessed this step's action at
+                # position i, so average those K guesses (ACT's weights exp(-0.01 j),
+                # j = 0 for the oldest guess, are almost uniform)
+                chunks = (chunks + [model.act_chunk(img_t, text_ids, state_t)[0].cpu().numpy()])[-K:]
+                guesses = np.stack([c[len(chunks) - 1 - j] for j, c in enumerate(chunks)])
+                weights = np.exp(-0.01 * np.arange(len(guesses)))
+                action = (weights[:, None] * guesses).sum(axis=0) / weights.sum()
+            elif planner is None and K > 1:
                 if not queue:
                     k = args.execute_steps or max(1, model.config["action_chunk"] // 2)
                     queue = list(model.act_chunk(img_t, text_ids, state_t)[0, :k].cpu().numpy())
