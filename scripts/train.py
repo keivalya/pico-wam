@@ -240,6 +240,8 @@ def parse_args():
     parser.add_argument("--state-weight", type=float, default=0.5)
     parser.add_argument("--image-weight", type=float, default=1.0)
     parser.add_argument("--latent-weight", type=float, default=1.0)
+    parser.add_argument("--image-focus", type=float, default=0.0,
+                        help="Extra weight on the pixels that move (differ from the mean image) in the image loss.")
 
     parser.add_argument("--save-path", type=str, default="checkpoints/model.pt")
 
@@ -422,6 +424,7 @@ def main():
         state=args.state_weight,
         image=args.image_weight,
         latent=args.latent_weight,
+        image_focus=args.image_focus,
     )
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)

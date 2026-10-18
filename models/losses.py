@@ -39,6 +39,20 @@ class LossWeights:
     state: float = 0.5
     image: float = 1.0
     latent: float = 1.0
+    image_focus: float = 0.0   # extra weight on pixels that differ from the mean image: the T and the agent
+
+
+def image_loss(pred, target, mean_image, focus):
+    """
+    Pixel MSE. With focus > 0, pixels where the target differs from the mean image,
+    the objects that move, count 1 + focus times as much as the static background,
+    so a small T on a white table is not drawn as a blur to save background error.
+    """
+    if focus <= 0:
+        return F.mse_loss(pred, target)
+    moving = ((target - mean_image).abs().amax(dim=-3, keepdim=True) > 0.1).float()
+    w = 1.0 + focus * moving
+    return ((pred - target) ** 2 * w).sum() / (w.sum() * pred.shape[-3])
 
 
 def compute_wam_loss(outputs: Dict[str, torch.Tensor], batch: Dict[str, torch.Tensor], model, weights: LossWeights):
@@ -60,8 +74,9 @@ def compute_wam_loss(outputs: Dict[str, torch.Tensor], batch: Dict[str, torch.Te
         total = total + weights.state * (recon + pred)
 
     if "image_recon" in outputs:
-        recon = F.mse_loss(outputs["image_recon"], batch["image"])
-        pred = F.mse_loss(outputs["image_pred"], batch["future_images"])
+        mean = model.image_decoder.mean_image
+        recon = image_loss(outputs["image_recon"], batch["image"], mean, weights.image_focus)
+        pred = image_loss(outputs["image_pred"], batch["future_images"], mean, weights.image_focus)
 
         logs["image_recon_loss"] = recon.detach()
         logs["image_pred_loss"] = pred.detach()
