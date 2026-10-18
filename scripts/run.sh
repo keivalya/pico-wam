@@ -20,6 +20,7 @@ DEMOS="${DEMOS:-206}"                    # pusht: how many of LeRobot's 206 huma
 MODE="${MODE:-pipeline}"                 # pipeline, or supervision (the matched-supervision pilot)
 PLAN="${PLAN:-1}"                        # pusht: also test the WAM planning with its world model (scripts/plan.py)
 PLAN_COMPARE="${PLAN_COMPARE:-1}"        # pusht: also test the old planner, whose search starts from the last plan (warm_start)
+PLAN_SWEEP="${PLAN_SWEEP:-0}"            # pusht: 1 = also test bigger search budgets: wider noise, 3 rounds, no policy prior
 BRANCHES="${BRANCHES:-1}"                # pusht: 1 = the WAM also learns from simulator branches of the demos (scripts/branch_demos.py)
 PARALLEL_SEEDS="${PARALLEL_SEEDS:-1}"    # 1 = run all seeds at once on the job's GPU (same results, less wall time)
 case "$ENV_NAME" in
@@ -38,8 +39,14 @@ PREDICT_IMAGE="${PREDICT_IMAGE:-1}"      # 1 = the WAM also decodes images, so y
 IMAGE_WEIGHT="${IMAGE_WEIGHT:-1.0}"
 LATENT_WEIGHT="${LATENT_WEIGHT:-1.0}"
 STATE_INPUT="${STATE_INPUT:-1}"          # 0 = image + language only (no state_t input)
-ACTION_HEAD="${ACTION_HEAD:-mlp}"
+ACTION_HEAD="${ACTION_HEAD:-mlp}"        # mlp, diffusion or flow
 ACTION_CHUNK="${ACTION_CHUNK:-8}"        # predict the next K actions at once and execute K/2 (1 = one action per step)
+TEMPORAL_ENSEMBLE="${TEMPORAL_ENSEMBLE:-0}"  # 1 = predict a chunk every step and average the chunks' guesses, as in ACT
+POLICY_HIDDEN="${POLICY_HIDDEN:-512}"    # action head: width of its hidden layers, for the WAM and mini-VLA alike
+POLICY_LAYERS="${POLICY_LAYERS:-3}"      # action head: number of hidden layers
+D_MODEL="${D_MODEL:-128}"                # width of the shared latent z; the dynamics MLP is twice as wide
+IMAGE_ENCODER="${IMAGE_ENCODER:-keypoints}"  # keypoints = CNN + spatial-softmax keypoints; cnn = CNN + global average pooling
+LR_SCHEDULE="${LR_SCHEDULE:-constant}"   # constant, or cosine decay to 0 (untested in the study)
 TEST_EPISODES="${TEST_EPISODES:-100}"
 DEVICE="${DEVICE:-auto}"
 OUT="${OUT:-results/$ENV_NAME}"
@@ -97,12 +104,15 @@ export PYTHONUNBUFFERED=1
 
 echo "[run] host=$(hostname) python=$($PYV --version) torch=$($PYV -c 'import torch; print(torch.__version__, torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu")')"
 echo "[run] cpus: $(nproc) slurm_job=${SLURM_JOB_ID:-none}"
-echo "[run] config: ENV_NAME=$ENV_NAME PUSHT_DATA=$PUSHT_DATA DEMOS=$DEMOS MODE=$MODE PLAN=$PLAN PLAN_COMPARE=$PLAN_COMPARE BRANCHES=$BRANCHES SEEDS='$SEEDS' EPOCHS=$EPOCHS EPISODES=$EPISODES MAX_STEPS=$MAX_STEPS RANDOM_ACTION_PROB=$RANDOM_ACTION_PROB HORIZON=$HORIZON ACTION_CHUNK=$ACTION_CHUNK STATE_WEIGHT=$STATE_WEIGHT PREDICT_IMAGE=$PREDICT_IMAGE IMAGE_WEIGHT=$IMAGE_WEIGHT LATENT_WEIGHT=$LATENT_WEIGHT STATE_INPUT=$STATE_INPUT ACTION_HEAD=$ACTION_HEAD TEST_EPISODES=$TEST_EPISODES"
+echo "[run] config: ENV_NAME=$ENV_NAME PUSHT_DATA=$PUSHT_DATA DEMOS=$DEMOS MODE=$MODE PLAN=$PLAN PLAN_COMPARE=$PLAN_COMPARE PLAN_SWEEP=$PLAN_SWEEP BRANCHES=$BRANCHES SEEDS='$SEEDS' EPOCHS=$EPOCHS EPISODES=$EPISODES MAX_STEPS=$MAX_STEPS RANDOM_ACTION_PROB=$RANDOM_ACTION_PROB HORIZON=$HORIZON ACTION_CHUNK=$ACTION_CHUNK TEMPORAL_ENSEMBLE=$TEMPORAL_ENSEMBLE STATE_WEIGHT=$STATE_WEIGHT PREDICT_IMAGE=$PREDICT_IMAGE IMAGE_WEIGHT=$IMAGE_WEIGHT LATENT_WEIGHT=$LATENT_WEIGHT STATE_INPUT=$STATE_INPUT ACTION_HEAD=$ACTION_HEAD POLICY_HIDDEN=$POLICY_HIDDEN POLICY_LAYERS=$POLICY_LAYERS D_MODEL=$D_MODEL IMAGE_ENCODER=$IMAGE_ENCODER LR_SCHEDULE=$LR_SCHEDULE TEST_EPISODES=$TEST_EPISODES"
 
 STATE_FLAG=""
 [ "$STATE_INPUT" = "0" ] && STATE_FLAG="--no_state_input"
 IMAGE_FLAG=""
 [ "$PREDICT_IMAGE" = "1" ] && IMAGE_FLAG="--predict_image"
+ENSEMBLE_FLAG=""
+[ "$TEMPORAL_ENSEMBLE" = "1" ] && ENSEMBLE_FLAG="--temporal-ensemble"
+MODEL_FLAGS="--action_head $ACTION_HEAD --action-chunk $ACTION_CHUNK --policy-hidden $POLICY_HIDDEN --policy-layers $POLICY_LAYERS --d-model $D_MODEL --image_encoder $IMAGE_ENCODER --lr-schedule $LR_SCHEDULE"
 TORCH_DEVICE="$DEVICE"   # scripts that take a torch device name, not "auto"
 [ "$DEVICE" = "auto" ] && TORCH_DEVICE="$($PYV -c 'import torch; print("cuda" if torch.cuda.is_available() else "cpu")')"
 
@@ -182,22 +192,22 @@ run_seed() {
   fi
 
   # 2. WAM and the mini-VLA baseline (same demos, same action head, same seed)
-  $PYV -m scripts.train --dataset-path "$WAM_DATA" --model_type wam --action_head "$ACTION_HEAD" --action-chunk "$ACTION_CHUNK" \
+  $PYV -m scripts.train --dataset-path "$WAM_DATA" --model_type wam $MODEL_FLAGS \
     --predict_state $IMAGE_FLAG $STATE_FLAG --horizon "$HORIZON" \
     --state-weight "$STATE_WEIGHT" --image-weight "$IMAGE_WEIGHT" --latent-weight "$LATENT_WEIGHT" \
-    --epochs "$EPOCHS" --seed "$SEED" --device "$DEVICE" --save-path "$R/wam.pt" | grep -E "Episodes:|Epoch $EPOCHS/| val:" | tail -3
+    --epochs "$EPOCHS" --seed "$SEED" --device "$DEVICE" --save-path "$R/wam.pt" | grep -E "Model:|Episodes:|Epoch $EPOCHS/| val:" | tail -4
 
-  $PYV -m scripts.train --dataset-path "$R/$ENV_NAME.npz" --model_type vla --action_head "$ACTION_HEAD" --action-chunk "$ACTION_CHUNK" \
-    $STATE_FLAG --epochs "$EPOCHS" --seed "$SEED" --device "$DEVICE" --save-path "$R/vla.pt" | grep -E "Epoch $EPOCHS/| val:" | tail -2
+  $PYV -m scripts.train --dataset-path "$R/$ENV_NAME.npz" --model_type vla $MODEL_FLAGS \
+    $STATE_FLAG --epochs "$EPOCHS" --seed "$SEED" --device "$DEVICE" --save-path "$R/vla.pt" | grep -E "Model:|Epoch $EPOCHS/| val:" | tail -3
 
   # 3. world-model evaluation on unseen episodes (+ counterfactuals)
   $PYV -m scripts.evaluate --checkpoint "$R/wam.pt" --max-horizon 15 --device "$DEVICE" --output "$R/wam_eval.json"
 
   # 4. closed loop on unseen env seeds
   $PYV -m scripts.test --checkpoint "$R/wam.pt" --episodes "$TEST_EPISODES" --seed $((10000 + 1000 * SEED)) \
-    --max-steps "$MAX_STEPS" --device cpu --json-out "$R/wam_test.json" | tail -1
+    --max-steps "$MAX_STEPS" --device cpu $ENSEMBLE_FLAG --json-out "$R/wam_test.json" | tail -1
   $PYV -m scripts.test --checkpoint "$R/vla.pt" --episodes "$TEST_EPISODES" --seed $((10000 + 1000 * SEED)) \
-    --max-steps "$MAX_STEPS" --device cpu --json-out "$R/vla_test.json" | tail -1
+    --max-steps "$MAX_STEPS" --device cpu $ENSEMBLE_FLAG --json-out "$R/vla_test.json" | tail -1
   if [ "$ENV_NAME" = "pusht" ] && [ "$PLAN" = "1" ]; then
     $PYV -m scripts.test --checkpoint "$R/wam.pt" --planner mpc --episodes "$TEST_EPISODES" --seed $((10000 + 1000 * SEED)) \
       --max-steps "$MAX_STEPS" --device "$TORCH_DEVICE" --json-out "$R/wam_mpc_test.json" | tail -1
@@ -206,6 +216,17 @@ run_seed() {
         --episodes "$TEST_EPISODES" --seed $((10000 + 1000 * SEED)) \
         --max-steps "$MAX_STEPS" --device "$TORCH_DEVICE" --json-out "$R/wam_mpc_warm_test.json" | tail -1
     fi
+  fi
+  if [ "$ENV_NAME" = "pusht" ] && [ "$PLAN_SWEEP" = "1" ]; then
+    # the same planner with more search (three cross-entropy rounds, wider noise), or without the policy's
+    # prior, all warm-started like the study-base planner these budgets were measured with
+    for CFG in 'cem {"iterations": 3, "noise": 0.3, "warm_start": true}' 'wide {"noise": 0.3, "warm_start": true}' \
+               'noprior {"prior": "zero", "iterations": 3, "noise": 0.3, "warm_start": true}'; do
+      NAME="${CFG%% *}"
+      $PYV -m scripts.test --checkpoint "$R/wam.pt" --planner mpc --planner-config "${CFG#* }" --episodes "$TEST_EPISODES" \
+        --seed $((10000 + 1000 * SEED)) --max-steps "$MAX_STEPS" --device "$TORCH_DEVICE" \
+        --json-out "$R/wam_mpc_${NAME}_test.json" | tail -1 | sed "s/^/[$NAME] /"
+    done
   fi
 }
 for_each_seed run_seed

@@ -5,7 +5,9 @@
 #   RANDOM_ACTION_PROB=0.0 bash scripts/run_toy.sh
 set -euo pipefail
 # The point-mass study predates the Push-T defaults, so pin its own settings
-# (one action per step, 15 epochs, image decoder on) unless you override them.
+# (one action per step, 15 epochs, image decoder on, the original action head
+# with one hidden layer of 128) unless you override them.
 ENV_NAME=toy OUT="${OUT:-results}" VIS_DIR="${VIS_DIR:-outputs/wam}" \
   ACTION_CHUNK="${ACTION_CHUNK:-1}" EPOCHS="${EPOCHS:-15}" PREDICT_IMAGE="${PREDICT_IMAGE:-1}" \
+  POLICY_HIDDEN="${POLICY_HIDDEN:-128}" POLICY_LAYERS="${POLICY_LAYERS:-1}" \
   exec bash "$(dirname "$0")/run.sh"
