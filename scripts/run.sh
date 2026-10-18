@@ -33,9 +33,9 @@ EPOCHS="${EPOCHS:-100}"
 EPISODES="${EPISODES:-$DEFAULT_EPISODES}"     # collected demonstrations per seed (90% train / 10% unseen)
 MAX_STEPS="${MAX_STEPS:-$DEFAULT_MAX_STEPS}"  # per collected and tested episode
 RANDOM_ACTION_PROB="${RANDOM_ACTION_PROB:-$DEFAULT_RANDOM_ACTION_PROB}"   # exploration bursts in the data
-HORIZON="${HORIZON:-5}"                  # imagination steps per training window
+HORIZON="${HORIZON:-15}"                 # imagination steps per training window
 STATE_WEIGHT="${STATE_WEIGHT:-0.5}"
-PREDICT_IMAGE="${PREDICT_IMAGE:-1}"      # 1 = the WAM also decodes images, so you can watch its imagination; 0 trains about 5x faster
+PREDICT_IMAGE="${PREDICT_IMAGE:-0}"      # 1 = the WAM also decodes images, so you can watch its imagination; 0 trains about 5x faster
 IMAGE_WEIGHT="${IMAGE_WEIGHT:-1.0}"
 LATENT_WEIGHT="${LATENT_WEIGHT:-1.0}"
 STATE_INPUT="${STATE_INPUT:-1}"          # 0 = image + language only (no state_t input)
