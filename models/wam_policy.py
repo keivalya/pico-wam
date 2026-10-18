@@ -119,7 +119,7 @@ class PicoWAMPolicy(nn.Module):
 
         # world model: (z, a) -> z', and z -> (state, image)
         if self.is_wam:
-            self.dynamics = LatentDynamicsMLP(d_model=d_model, action_dim=action_dim)
+            self.dynamics = LatentDynamicsMLP(d_model=d_model, action_dim=action_dim, hidden_dim=2 * d_model)
         if self.predict_state:
             self.state_readout = StateReadout(d_model=d_model, state_dim=state_dim, linear=linear_readout)
         if self.predict_image:
