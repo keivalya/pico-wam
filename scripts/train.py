@@ -226,6 +226,10 @@ def parse_args():
     parser.add_argument("--d-model", type=int, default=128)
     parser.add_argument("--diffusion-T", type=int, default=16)
     parser.add_argument("--flow-steps", type=int, default=8)
+    parser.add_argument("--policy-hidden", type=int, default=None,
+                        help="Hidden width of the policy head (default: d_model).")
+    parser.add_argument("--policy-layers", type=int, default=None,
+                        help="Hidden layers of the policy head (default: 1 for mlp, 2 for flow).")
     parser.add_argument("--action-chunk", type=int, default=1,
                         help="Predict the next K actions at once (Diffusion Policy-style action chunking).")
 
@@ -400,6 +404,8 @@ def main():
         diffusion_T=args.diffusion_T,
         flow_steps=args.flow_steps,
         action_chunk=args.action_chunk,
+        policy_hidden=args.policy_hidden,
+        policy_layers=args.policy_layers,
     ).to(device)
 
     train_states = full.states[np.isin(full.split_ids, train_eps)]
@@ -431,6 +437,9 @@ def main():
         # save every epoch, so an interrupted run still leaves a usable checkpoint
         save_checkpoint(model, full, train_eps, val_eps, horizon, args, history)
 
+    n_params = sum(p.numel() for p in model.parameters())
+    n_policy = sum(p.numel() for p in model.policy_head.parameters())
+    print(f"Model: {args.model_type}, {n_params:,} parameters ({n_policy:,} in the {args.action_head} policy head)")
     print("Saved checkpoint:", args.save_path)
 
 

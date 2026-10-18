@@ -62,6 +62,8 @@ class PicoWAMPolicy(nn.Module):
         diffusion_T=16,
         flow_steps=8,
         action_chunk=1,
+        policy_hidden=None,
+        policy_layers=None,
     ):
         super().__init__()
 
@@ -85,6 +87,8 @@ class PicoWAMPolicy(nn.Module):
             diffusion_T=diffusion_T,
             flow_steps=flow_steps,
             action_chunk=action_chunk,
+            policy_hidden=policy_hidden,
+            policy_layers=policy_layers,
         )
 
         self.is_wam = model_type == "wam"
@@ -99,7 +103,9 @@ class PicoWAMPolicy(nn.Module):
         self.fusion = FusionMLP(d_model=d_model)
 
         # policy: z -> a, or with action_chunk = K > 1 the next K actions at once
-        # (as in Diffusion Policy); act() returns the first, act_chunk() all K
+        # (as in Diffusion Policy); act() returns the first, act_chunk() all K.
+        # policy_hidden / policy_layers size the head (default: d_model wide,
+        # 1 hidden layer for mlp, 2 for flow)
         self.action_dim, self.action_chunk = action_dim, action_chunk
         self.policy_head = build_action_head(
             action_head,
@@ -107,6 +113,8 @@ class PicoWAMPolicy(nn.Module):
             cond_dim=d_model,
             diffusion_T=diffusion_T,
             flow_steps=flow_steps,
+            hidden_dim=policy_hidden,
+            num_layers=policy_layers,
         )
 
         # world model: (z, a) -> z', and z -> (state, image)

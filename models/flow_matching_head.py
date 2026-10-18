@@ -62,6 +62,7 @@ class FlowMatchingActionHead(nn.Module):
         cond_dim: int,
         hidden_dim: int = 128,
         time_dim: int = 64,
+        num_layers: int = 2,
         num_inference_steps: int = 8,
     ):
         super().__init__()
@@ -72,13 +73,11 @@ class FlowMatchingActionHead(nn.Module):
 
         self.time_embed = SinusoidalTimeEmbedding(time_dim)
 
-        self.net = nn.Sequential(
-            nn.Linear(action_dim + cond_dim + time_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, action_dim),
-        )
+        layers, width = [], action_dim + cond_dim + time_dim
+        for _ in range(num_layers):
+            layers += [nn.Linear(width, hidden_dim), nn.ReLU()]
+            width = hidden_dim
+        self.net = nn.Sequential(*layers, nn.Linear(width, action_dim))
 
     def velocity(self, x_t, t, cond):
         """

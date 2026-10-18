@@ -21,13 +21,13 @@ from .flow_matching_head import FlowMatchingActionHead
 
 
 class MLPActionHead(nn.Module):
-    def __init__(self, action_dim, cond_dim, hidden_dim=128):
+    def __init__(self, action_dim, cond_dim, hidden_dim=128, num_layers=1):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(cond_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, action_dim),
-        )
+        layers, width = [], cond_dim
+        for _ in range(num_layers):
+            layers += [nn.Linear(width, hidden_dim), nn.ReLU()]
+            width = hidden_dim
+        self.net = nn.Sequential(*layers, nn.Linear(width, action_dim))
 
     def loss(self, actions, cond):
         return F.mse_loss(self.net(cond), actions)
@@ -36,9 +36,13 @@ class MLPActionHead(nn.Module):
         return self.net(cond)
 
 
-def build_action_head(name, action_dim, cond_dim, diffusion_T=16, flow_steps=8):
+def build_action_head(name, action_dim, cond_dim, diffusion_T=16, flow_steps=8, hidden_dim=None, num_layers=None):
+    """hidden_dim defaults to cond_dim; num_layers (hidden layers) to 1 for mlp, 2 for flow.
+    The diffusion head keeps its own fixed network."""
+    hidden_dim = hidden_dim or cond_dim
+
     if name == "mlp":
-        return MLPActionHead(action_dim, cond_dim, hidden_dim=cond_dim)
+        return MLPActionHead(action_dim, cond_dim, hidden_dim=hidden_dim, num_layers=num_layers or 1)
 
     if name == "diffusion":
         cfg = DiffusionConfig(T=diffusion_T, action_dim=action_dim, cond_dim=cond_dim)
@@ -48,7 +52,8 @@ def build_action_head(name, action_dim, cond_dim, diffusion_T=16, flow_steps=8):
         return FlowMatchingActionHead(
             action_dim=action_dim,
             cond_dim=cond_dim,
-            hidden_dim=cond_dim,
+            hidden_dim=hidden_dim,
+            num_layers=num_layers or 2,
             num_inference_steps=flow_steps,
         )
 
