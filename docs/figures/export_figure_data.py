@@ -66,16 +66,17 @@ def export_episode_views(model, ckpt, data):
     recon = model.decode(z_real)
 
     cols = np.unique(np.linspace(0, T, STRIP_FRAMES).round().astype(int))
-    np.savez_compressed(
-        os.path.join(OUT, "episode_strip.npz"),
-        timesteps=cols,
-        real=to_uint8(ep["images"][cols]),
-        recon=to_uint8(recon["image"][cols]),
-        imagined=to_uint8(imag["image"][0, cols]),
-        dreamed=to_uint8(dream["image"][0, cols]),
-        instruction=np.asarray(ep["text"]),
-        episode=episode,
-    )
+    if "image" in recon:  # the strip shows decoded frames: only for a WAM with an image decoder
+        np.savez_compressed(
+            os.path.join(OUT, "episode_strip.npz"),
+            timesteps=cols,
+            real=to_uint8(ep["images"][cols]),
+            recon=to_uint8(recon["image"][cols]),
+            imagined=to_uint8(imag["image"][0, cols]),
+            dreamed=to_uint8(dream["image"][0, cols]),
+            instruction=np.asarray(ep["text"]),
+            episode=episode,
+        )
     np.savez_compressed(
         os.path.join(OUT, "episode_beliefs.npz"),
         true=ep["states"].cpu().numpy(),
@@ -122,9 +123,10 @@ def export_what_if(models, env_name):
         start_state=s0,
         imagined=out["state"].cpu().numpy(),
         true=truth,
-        final_frames=to_uint8(out["image"][:, -1]),
         names=np.asarray(names),
     )
+    if "image" in out:
+        example["final_frames"] = to_uint8(out["image"][:, -1])
 
     # endpoint error (Euclidean distance after the push, unit square) for every
     # held-out episode start of every seed: the agent, and on Push-T the block

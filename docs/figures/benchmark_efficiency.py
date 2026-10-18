@@ -110,19 +110,22 @@ def main():
             "encode": timeit(lambda: wam.encode_obs(img, txt, st)),
             "dynamics_step": timeit(lambda: wam.dynamics(z, a)),
             "state_readout": timeit(lambda: wam.state_readout(z)),
-            "image_decoder": timeit(lambda: wam.image_decoder(z)),
         }
+        if wam.predict_image:
+            latency["image_decoder"] = timeit(lambda: wam.image_decoder(z))
         for k in [1, 5, 10, 20]:
             acts = a[:, None].expand(1, k, -1).contiguous()
             latency[f"imagine_{k}_states"] = timeit(
                 lambda acts=acts, k=k: [wam.state_readout(zz) for zz in wam.dynamics.rollout(z, acts).unbind(1)], repeats=100)
-            latency[f"imagine_{k}_states_and_images"] = timeit(
-                lambda acts=acts, k=k: wam.image_decoder(wam.dynamics.rollout(z, acts)), repeats=50)
+            if wam.predict_image:
+                latency[f"imagine_{k}_states_and_images"] = timeit(
+                    lambda acts=acts, k=k: wam.image_decoder(wam.dynamics.rollout(z, acts)), repeats=50)
 
     weights = LossWeights()
     starts = ds.starts[:64]
     batch = next(ds.batches(starts, 64, shuffle=False))
-    # a WAM that predicts states but no pixels (same config, no image decoder)
+    # a WAM that predicts states but no pixels (same config, no image decoder;
+    # the same as `wam` if it was trained without one)
     cfg = dict(wam.config, predict_image=False)
     wam_state_only = PicoWAMPolicy(**cfg)
     wam_state_only.load_state_dict({k: v for k, v in wam.state_dict().items() if not k.startswith("image_decoder")}, strict=False)
