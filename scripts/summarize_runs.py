@@ -65,6 +65,8 @@ def main():
     warm_tests = [load(os.path.join(d, "wam_mpc_warm_test.json")) for d in seed_dirs]  # the old warm-start planner
     coverage = {"wam_coverage": wam_tests, "vla_coverage": vla_tests, "wam_mpc_coverage": mpc_tests,
                 "wam_mpc_warm_coverage": warm_tests}
+    for name in ["cem", "wide", "noprior"]:   # planner budgets (PLAN_SWEEP=1)
+        coverage[f"wam_mpc_{name}_coverage"] = [load(os.path.join(d, f"wam_mpc_{name}_test.json")) for d in seed_dirs]
     for key, tests in coverage.items():
         values = mean_std([t.get("mean_max_coverage") for t in tests if t])
         if values is not None:
@@ -115,6 +117,9 @@ def main():
         ("  plans: block error px", "mpc_plan_error_px", 1),
         ("  warm: expected gain px", "mpc_warm_expected_gain_px", 1), ("  warm: real gain px", "mpc_warm_real_gain_px", 1),
         ("  warm: block error px", "mpc_warm_plan_error_px", 1),
+        ("  planning, 3 CEM rounds", "wam_mpc_cem_coverage", 3),
+        ("  planning, wider noise", "wam_mpc_wide_coverage", 3),
+        ("  planning, no policy prior", "wam_mpc_noprior_coverage", 3),
         ("state nMSE k=1", "state_nmse_k1", 4), ("  copy baseline k=1", "state_copy_k1", 4),
         ("state nMSE k=5", "state_nmse_k5", 4), ("  copy baseline k=5", "state_copy_k5", 4),
         ("state nMSE k=15", "state_nmse_k15", 4), ("  copy baseline k=15", "state_copy_k15", 4),

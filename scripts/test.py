@@ -45,7 +45,7 @@ def parse_args():
     parser.add_argument("--planner", type=str, default="policy", choices=["policy", "mpc"],
                         help="policy: act with the action head; mpc: plan with the world model (scripts/plan.py, Push-T).")
     parser.add_argument("--planner-config", type=str, default="{}",
-                        help='JSON overrides for the planner, e.g. \'{"warm_start": true}\'.')
+                        help='JSON overrides for the planner, e.g. \'{"warm_start": true}\' or \'{"iterations": 3, "noise": 0.3}\'.')
     parser.add_argument("--check-plans-every", type=int, default=10,
                         help="mpc on Push-T: every N steps, compare the chosen plan's imagined outcome with the simulator's (0 = never).")
     parser.add_argument("--device", type=str, default="cpu")
@@ -197,7 +197,7 @@ def main():
             out["max_coverage"] = [float(c) for c in coverages]
         if planner is not None:
             out["planner_config"] = {k: getattr(planner, k) for k in
-                                     ["horizon", "samples", "elites", "iterations", "noise", "approach_weight", "warm_start"]}
+                                     ["horizon", "samples", "elites", "iterations", "noise", "approach_weight", "warm_start", "prior"]}
             if plan_checks:
                 out["plan_checks"] = {k: float(np.mean([c[k] for c in plan_checks])) for k in plan_checks[0]}
                 out["plan_checks"]["n"] = len(plan_checks)
