@@ -1,0 +1,64 @@
+[run] ===== seed 1 =====
+  source:       lerobot/pusht@7628202, lerobot/pusht_keypoints@ace8c16
+  episodes:     206 (transitions per episode: mean 124, min 48, max 245)
+  images:       (25444, 64, 64, 3)
+  states:       (25444, 8)
+  actions:      (25444, 2) (29 of 25650 targets clipped to STEP)
+  PD replay:    worst agent position mismatch 2.7e-05 px
+  vocab size:   8
+  25444 demo transitions, 6013 branches x 8 = 48104 branch transitions (noise 0.3; the block moves in 34% of them)
+              val:   loss=0.0667 action=0.0622 s_rec=0.0024 s_pred=0.0025 img_rec=0.0007 img_pred=0.0007 latent=0.0006
+Epoch 100/100 train: loss=0.1174 action=0.1145 s_rec=0.0019 s_pred=0.0016 img_rec=0.0003 img_pred=0.0003 latent=0.0005
+              val:   loss=0.0667 action=0.0624 s_rec=0.0022 s_pred=0.0025 img_rec=0.0007 img_pred=0.0008 latent=0.0006
+Model: wam, 1,371,883 parameters (640,528 in the flow policy head)
+Epoch 100/100 train: loss=0.1087 action=0.1087
+              val:   loss=0.1173 action=0.1173
+Model: vla, 862,560 parameters (640,528 in the flow policy head)
+Held-out episodes: 21
+  k      n  state nMSE     copy  image MSE     copy
+  0   2705      0.0019   0.0000    0.00068  0.00000
+  1   2684      0.0009   0.0164    0.00068  0.00040
+  2   2663      0.0009   0.0480    0.00069  0.00081
+  3   2642      0.0012   0.0872    0.00072  0.00113
+  4   2621      0.0017   0.1293    0.00076  0.00138
+  5   2600      0.0023   0.1714    0.00081  0.00161
+  6   2579      0.0032   0.2115    0.00088  0.00181
+  7   2558      0.0043   0.2490    0.00096  0.00198
+  8   2537      0.0057   0.2834    0.00105  0.00214
+  9   2516      0.0074   0.3154    0.00115  0.00228
+ 10   2495      0.0093   0.3454    0.00126  0.00241
+ 11   2474      0.0116   0.3738    0.00138  0.00254
+ 12   2453      0.0142   0.4002    0.00150  0.00265
+ 13   2432      0.0172   0.4257    0.00162  0.00277
+ 14   2411      0.0207   0.4508    0.00175  0.00288
+ 15   2390      0.0246   0.4754    0.00189  0.00300
+
+State readout R^2 (k=0: from the real latent, k>0: from the imagined latent)
+      variable     k=0     k=1     k=5    k=10    k=15
+       agent_x   0.998   0.999   0.998   0.989   0.973
+       agent_y   0.999   0.999   0.999   0.996   0.988
+      agent_vx   0.995   0.999   1.000   1.000   0.999
+      agent_vy   0.992   0.999   0.999   0.999   0.999
+       block_x   0.998   0.999   0.996   0.984   0.962
+       block_y   0.998   0.999   0.995   0.976   0.929
+     block_cos   0.999   0.999   0.998   0.990   0.969
+     block_sin   0.998   0.999   0.996   0.984   0.953
+
+Counterfactual imagination (545 starts x 8 random plans)
+  k  WAM nMSE    no-op
+  1    0.0010   0.1469
+  2    0.0011   0.1502
+  3    0.0015   0.1541
+  4    0.0022   0.1565
+  5    0.0031   0.1622
+  6    0.0043   0.1648
+  7    0.0057   0.1681
+  8    0.0075   0.1705
+  9    0.0095   0.1766
+ 10    0.0118   0.1798
+
+Saved: results/pusht/seed1/wam_eval.json
+[test] Success rate: 10/100 = 10% | mean steps: 288.5 | mean max coverage: 0.769
+[test] Success rate: 5/100 = 5% | mean steps: 294.4 | mean max coverage: 0.595
+[test] Success rate: 7/100 = 7% | mean steps: 293.1 | mean max coverage: 0.692 | chosen plans, block px: expected gain +13.4, real gain +1.4, error 24.7
+[test] Success rate: 8/100 = 8% | mean steps: 292.3 | mean max coverage: 0.532 | chosen plans, block px: expected gain +25.3, real gain -0.8, error 38.9

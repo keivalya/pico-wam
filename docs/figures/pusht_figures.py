@@ -350,7 +350,8 @@ RECIPE = [("baseline", "study base,\none action per step"), ("action-chunks", "a
           ("chunks-epochs-100", "chunks, 100 epochs"), ("chunks-branched", "chunks, branched data"),
           ("chunks-restart-planner", "chunks, restarting planner"),
           ("branched-restart-planner", "chunks, branched data,\nrestarting planner"),
-          ("final", "all three, 100 epochs")]
+          ("branched-restart-100-epochs", "the same, 100 epochs"),
+          ("final", "+ action head 3×512")]
 POLICIES = [("vla_test", VLA, "s", 0.22, "mini-VLA"), ("wam_test", WAM, "o", 0.0, "WAM, reactive"),
             ("wam_mpc_test", PLAN, "D", -0.22, "WAM, planning")]
 
@@ -584,9 +585,9 @@ def fig_keypoints():
 
 
 def fig_efficiency():
-    d = load_json("baseline", "efficiency", "efficiency.json")
+    d = load_json("final", "efficiency-laptop", "efficiency.json") or load_json("baseline", "efficiency", "efficiency.json")
     P = d["parameters"]
-    fig, axes = fs.figure_grid(1, 3, width=W, ratio=0.36, gridspec_kw={"width_ratios": [1.25, 0.85, 1.0]})
+    fig, axes = fs.figure_grid(1, 3, width=W, ratio=0.42, gridspec_kw={"width_ratios": [1.25, 0.85, 1.0]})
     ax = axes[0]
     groups = [("encoders + fusion", ["img_encoder", "txt_encoder", "state_encoder", "fusion"], "#BBBBBB"),
               ("action head", ["policy_head"], VLA), ("dynamics + readout", ["dynamics", "state_readout"], WAM),
@@ -604,7 +605,6 @@ def fig_efficiency():
     ax.set_xlabel("parameters, thousands")
     ax.grid(axis="y", visible=False)
     ax.grid(axis="x", visible=True)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.45, -0.42), ncol=2, fontsize=5.5)
 
     ax = axes[1]
     T = d["train_step_ms"]
@@ -625,9 +625,202 @@ def fig_efficiency():
     ax.set_xticks(ks)
     ax.set_xlabel("imagined steps $k$")
     ax.set_ylabel("latency, ms")
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.4), ncol=1, fontsize=5.5)
+    handles, names = [], []
+    for a in (axes[0], axes[2]):   # one legend for the whole figure, below it
+        h, n = a.get_legend_handles_labels()
+        handles += h
+        names += n
+    fig.legend(handles, names, loc="outside lower center", ncol=4, fontsize=5.5)
     fs.panel_labels(axes)
     finish(fig, "fig-pusht-efficiency")
+
+
+# ------------------------------------------------------------ model size
+
+
+CAPACITY = [("branched-restart-100-epochs", "head 1×128"), ("final", "head 3×512"), ("head-3x1024", "head 3×1024"),
+            ("head-6x512", "head 6×512"), ("flow-head-3x512", "flow head 3×512"), ("latent-256", "latent 256, head 1×128"),
+            ("head-3x512-latent-256", "latent 256, head 3×512"), ("head-3x512-no-decoder", "head 3×512, no decoder")]
+
+
+def fig_capacity(exps):
+    """How big should pico-WAM be? Policy-head and latent sizes against coverage, successes and parameters."""
+    present = [(n, l) for n, l in CAPACITY if n in exps]
+    fig, axes = fs.figure_grid(1, 3, width=W, ratio=0.46, sharey=True, gridspec_kw={"width_ratios": [1.0, 1.0, 0.9]})
+    y = np.arange(len(present))[::-1]
+    for yi, (name, _) in zip(y, present):
+        s = exps[name]
+        for key, c, m, off, _ in POLICIES:
+            for ax, v in [(axes[0], coverage(s, key)), (axes[1], per_seed(s, lambda r: 100 * r[key]["success_rate"]))]:
+                ax.errorbar(v.mean(), yi + off, xerr=v.std(), color=c, marker=m, ms=2.8, capsize=1.5, lw=0.9)
+                ax.scatter(v, np.full(len(v), yi + off), s=4, color=c, alpha=0.45, lw=0, zorder=3)
+        eff = load_json(name, "efficiency", "efficiency.json")
+        P = eff["parameters"]
+        dec = P["wam"].get("image_decoder", 0) / 1e6
+        head = P["wam"]["policy_head"] / 1e6
+        rest = P["wam_total"] / 1e6 - dec - head
+        for left, w, color in [(0, rest, "#BBBBBB"), (rest, head, VLA), (rest + head, dec, fs.PALETTE["orange"])]:
+            axes[2].barh(yi, w, left=left, color=color, height=0.55)
+    axes[0].axhspan(y[1] - 0.5, y[1] + 0.5, color=fs.MUTED, alpha=0.35, lw=0, zorder=0)   # the default
+    for ax in axes[:2]:
+        ax.axhspan(y[1] - 0.5, y[1] + 0.5, color=fs.MUTED, alpha=0.35, lw=0, zorder=0)
+    axes[0].set_xlim(0, 100)
+    axes[1].set_xlim(-2, 60)
+    for ax, label in zip(axes, ["best coverage, %", "success rate, %", "WAM parameters, M"]):
+        ax.set_xlabel(label)
+        ax.set_yticks(y)
+        ax.grid(axis="y", visible=False)
+        ax.grid(axis="x", visible=True)
+    axes[0].set_yticklabels([l for _, l in present], fontsize=6.5)
+    axes[0].set_ylabel("model size")
+    axes[1].legend([Line2D([], [], color=c, marker=m, ls="none", ms=3) for _, c, m, _, _ in POLICIES],
+                   [l for *_, l in POLICIES], loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=3, fontsize=5.5)
+    axes[2].legend([plt.Rectangle((0, 0), 1, 1, color=c) for c in ["#BBBBBB", VLA, fs.PALETTE["orange"]]],
+                   ["encoders, dynamics", "action head", "image decoder"], loc="upper center", bbox_to_anchor=(0.5, -0.22),
+                   ncol=1, fontsize=5.5)
+    fs.panel_labels(axes)
+    finish(fig, "fig-pusht-capacity")
+
+
+def fig_pixels(exps):
+    """With pixels only, the world model's training signal is what makes the policy work."""
+    groups = [("final", "state + image\ninput"), ("pixel-input-head-3x512", "image input\nonly")]
+    groups = [(n, l) for n, l in groups if n in exps]
+    fig, axes = fs.figure_grid(1, 2, width=W, ratio=0.36)
+    for ax, getter, label in [(axes[0], lambda s, k: coverage(s, k), "best coverage, %"),
+                              (axes[1], lambda s, k: per_seed(s, lambda r: 100 * r[k]["success_rate"]), "success rate, %")]:
+        for gi, (name, _) in enumerate(groups):
+            for (key, c, m, _, lab), off in zip(POLICIES, [-0.26, 0.0, 0.26]):
+                v = getter(exps[name], key)
+                ax.bar(gi + off, v.mean(), 0.24, color=c, alpha=0.9, label=lab if gi == 0 else None)
+                ax.scatter(np.full(len(v), gi + off), v, s=6, color="black", zorder=3, lw=0)
+        ax.set_xticks(range(len(groups)))
+        ax.set_xticklabels([l for _, l in groups], fontsize=6.5)
+        ax.set_ylabel(label)
+        ax.grid(axis="x", visible=False)
+    axes[0].set_ylim(0, 100)
+    axes[1].legend(loc="upper right", fontsize=5.5)
+    fs.panel_labels(axes)
+    finish(fig, "fig-pusht-pixels")
+
+
+# ------------------------------------------------------------ illustrations
+
+
+def draw_scene(ax, state, block=True, agent=True, goal=True, alpha=1.0):
+    """Push-T drawn as vectors from a state: walls, the green target, the grey T and the blue agent."""
+    from envs.pusht_env import (AGENT_COLOR, AGENT_RADIUS, BLOCK_COLOR, GOAL_COLOR, GOAL_POSE, T_PARTS, WALL_COLOR,
+                                from_state, to_world)
+    rgb = lambda c: tuple(v / 255 for v in c)  # noqa: E731
+    phys = from_state(state)
+    if goal:
+        ax.add_patch(plt.Rectangle((5, 5), 501, 501, fill=False, ec=rgb(WALL_COLOR), lw=1.2))
+        for part in T_PARTS:
+            ax.add_patch(plt.Polygon(to_world(part, GOAL_POSE), color=rgb(GOAL_COLOR), lw=0, alpha=0.8))
+    if block:
+        for part in T_PARTS:
+            ax.add_patch(plt.Polygon(to_world(part, phys[4:7]), color=rgb(BLOCK_COLOR), lw=0, alpha=alpha))
+    if agent:
+        ax.add_patch(plt.Circle(phys[:2], AGENT_RADIUS, color=rgb(AGENT_COLOR), lw=0, alpha=alpha))
+    ax.set_xlim(0, 512)
+    ax.set_ylim(512, 0)
+    ax.set_aspect("equal")
+    ax.set_axis_off()
+
+
+def t_outline(ax, state, **kw):
+    from envs.pusht_env import T_OUTLINE, from_state, to_world
+    ax.add_patch(plt.Polygon(to_world(T_OUTLINE, from_state(state)[4:7]), fill=False, **kw))
+
+
+def agent_px(states):
+    states = np.asarray(states)
+    return states[..., 0] * 512, (1 - states[..., 1]) * 512
+
+
+def fig_branches():
+    d = figdata("branches", "final")
+    a, b = d["window"]
+    demo = d["demo"]
+    fig, axes = plt.subplots(1, 2, figsize=(W, 0.5 * W), layout="constrained")
+    for ax in axes:
+        draw_scene(ax, demo[a], alpha=0.35)
+        t_outline(ax, demo[b], ec=TRUE, lw=0.9)
+        x, y = agent_px(demo[a:b + 1])
+        ax.plot(x, y, color=VLA, lw=1.4)
+    for br in d["branches"]:
+        x, y = agent_px(br)
+        axes[1].plot(x, y, color=WAM, lw=0.8, alpha=0.9)
+        t_outline(axes[1], br[-1], ec=WAM, lw=0.6, ls="--")
+    handles = [Line2D([], [], color=VLA, lw=1.4), Line2D([], [], color=TRUE, lw=0.9),
+               Line2D([], [], color=WAM, lw=0.8), Line2D([], [], color=WAM, lw=0.6, ls="--")]
+    fig.legend(handles, ["the person's agent path", "where the person left the T",
+                         "branch: the same pushes, perturbed", "where the T ends after a branch"],
+               loc="outside lower center", ncol=2, fontsize=6)
+    fs.panel_labels(axes, pad=2.0)
+    finish(fig, "fig-pusht-branches")
+
+
+def fig_planner():
+    d = figdata("planner", "final")
+    costs, chosen, policy = d["costs"], int(d["chosen"]), int(d["policy"])
+    fig = plt.figure(figsize=(W, 0.44 * W), layout="constrained")
+    gs = fig.add_gridspec(1, 2, width_ratios=[1.0, 1.15])
+    ax = fig.add_subplot(gs[0])
+    draw_scene(ax, d["state"], alpha=0.6)
+    order = np.argsort(costs)[::-1]
+    for i in order[::4]:   # every fourth candidate, worst first, so the best are drawn on top
+        x, y = agent_px(np.concatenate([d["state"][None], d["imagined"][i]]))
+        ax.plot(x, y, color=REF, lw=0.4, alpha=0.35)
+    for idx, color, lw in [(policy, VLA, 1.3), (chosen, PLAN, 1.6)]:
+        x, y = agent_px(np.concatenate([d["state"][None], d["imagined"][idx]]))
+        ax.plot(x, y, color=color, lw=lw)
+    t_outline(ax, d["imagined"][chosen][-1], ec=PLAN, lw=1.0, ls="--")
+    t_outline(ax, d["real_chosen"][-1], ec=TRUE, lw=0.9)
+    from envs.pusht_env import from_state
+    phys = from_state(d["state"])
+    cx, cy = (phys[0] + phys[4]) / 2, (phys[1] + phys[5]) / 2   # zoom on the agent and the T
+    ax.set_xlim(cx - 150, cx + 150)
+    ax.set_ylim(cy + 150, cy - 150)
+    ax.legend([Line2D([], [], color=REF, lw=0.6), Line2D([], [], color=VLA, lw=1.3), Line2D([], [], color=PLAN, lw=1.6),
+               Line2D([], [], color=PLAN, lw=1.0, ls="--"), Line2D([], [], color=TRUE, lw=0.9)],
+              ["imagined candidates", "the policy's plan", "the chosen plan", "imagined T after 12 steps",
+               "real T after 12 steps"], loc="upper center", bbox_to_anchor=(0.5, -0.02), ncol=2, fontsize=5.5)
+
+    ax2 = fig.add_subplot(gs[1])
+    ax2.hist(costs, bins=30, color=fs.MUTED, edgecolor=REF, lw=0.3)
+    ax2.axvline(costs[policy], color=VLA, lw=1.2, label="the policy's plan")
+    ax2.axvline(costs[chosen], color=PLAN, lw=1.4, label="the chosen plan, lowest cost")
+    ax2.set_xlabel("imagined cost: T corners to target, px")
+    ax2.set_ylabel("candidate plans")
+    ax2.legend(loc="upper right", fontsize=5.5)
+    fs.panel_labels([ax, ax2], pad=4.0)
+    finish(fig, "fig-pusht-planner")
+
+
+def fig_episode():
+    d = figdata("episode", "final")
+    states, cov = d["states"], d["coverage"]
+    T = len(states) - 1
+    picks = np.linspace(0, T, 6).round().astype(int)
+    fig = plt.figure(figsize=(W, 0.32 * W), layout="constrained")
+    gs = fig.add_gridspec(1, 2, width_ratios=[4.0, 1.1])
+    sub = gs[0].subgridspec(1, len(picks), wspace=0.03)
+    first = None
+    for c, t in enumerate(picks):
+        a = fig.add_subplot(sub[0, c])
+        draw_scene(a, states[t])
+        a.text(0.5, 1.02, f"$t={t}$, {100 * cov[t]:.0f}%", transform=a.transAxes, ha="center", va="bottom", fontsize=6)
+        first = first or a
+    ax = fig.add_subplot(gs[1])
+    ax.plot(np.arange(len(cov)), 100 * cov, color=PLAN, lw=1.1)
+    ax.axhline(95, color=REF, lw=0.8, ls="--")
+    ax.text(2, 96.5, "success", color=REF, fontsize=5.5, va="bottom")
+    ax.set_ylim(0, 105)
+    ax.set_xlabel("timestep")
+    ax.set_ylabel("coverage of the target, %")
+    fs.panel_labels([first, ax], pad=7.0)
+    finish(fig, "fig-pusht-episode")
 
 
 def main():
@@ -640,6 +833,12 @@ def main():
         fig_planning(exps["planner-budget"], exps["baseline"])
     fig_ablations(exps)
     fig_recipe(exps)
+    fig_capacity(exps)
+    fig_pixels(exps)
+    if os.path.exists(os.path.join(RESULTS, "final", "figure-data", "planner.npz")):
+        fig_branches()
+        fig_planner()
+        fig_episode()
     fig_episode_strip()
     fig_beliefs()
     fig_what_if()

@@ -1,0 +1,57 @@
+{
+  "machine": {
+    "platform": "Linux-5.14.0-362.8.1.el9_3.x86_64-x86_64-with-glibc2.34",
+    "processor": "x86_64",
+    "torch": "2.14.1+cu126",
+    "threads": 1,
+    "device": "cpu"
+  },
+  "parameters": {
+    "wam": {
+      "img_encoder": 71568,
+      "txt_encoder": 75264,
+      "state_encoder": 9152,
+      "fusion": 66048,
+      "policy_head": 1387536,
+      "dynamics": 132480,
+      "state_readout": 1032,
+      "image_decoder": 375811
+    },
+    "vla": {
+      "img_encoder": 71568,
+      "txt_encoder": 75264,
+      "state_encoder": 9152,
+      "fusion": 66048,
+      "policy_head": 1387536
+    },
+    "wam_total": 2118891,
+    "vla_total": 1609568,
+    "wam_state_only_total": 1743080
+  },
+  "latency_ms": {
+    "act_wam": 2.320093975868076,
+    "act_vla": 2.3460384691134095,
+    "encode": 1.7534639628138393,
+    "dynamics_step": 0.10045702219940722,
+    "state_readout": 0.015572499250993133,
+    "image_decoder": 3.437995968852192,
+    "imagine_1_states": 0.14866801211610436,
+    "imagine_1_states_and_images": 3.671495011076331,
+    "imagine_5_states": 0.6662454979959875,
+    "imagine_5_states_and_images": 19.908010493963957,
+    "imagine_10_states": 1.3049455010332167,
+    "imagine_10_states_and_images": 34.860624495195225,
+    "imagine_20_states": 2.6023030222859234,
+    "imagine_20_states_and_images": 69.05917046242394
+  },
+  "train_step_ms": {
+    "wam": 3518.9042930142023,
+    "wam_state_only": 289.10949401324615,
+    "vla": 117.87801049649715
+  },
+  "batch_assembly_ms": {
+    "per_sample": 17.107336490880698,
+    "tensor_index": 9.24268999369815
+  },
+  "notes": "Median wall time per call; batch 1 for inference, batch 64 for training steps and batch assembly."
+}

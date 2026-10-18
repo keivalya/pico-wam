@@ -29,7 +29,11 @@ RUNS = {  # macro prefix -> results folder
     "chunkEpochs": "chunks-epochs-100", "chunkSixteen": "chunks-k16", "chunkEnsemble": "chunks-temporal-ensembling",
     "chunkNarrow": "chunks-dmodel-64", "chunkCnn": "chunks-plain-cnn", "chunkNodec": "chunks-no-decoder",
     "chunkBranch": "chunks-branched", "chunkRestart": "chunks-restart-planner", "branchRestart": "branched-restart-planner",
-    "final": "final",
+    "branchRestartEpochs": "branched-restart-100-epochs",
+    # the capacity round, on top of branched-restart-100-epochs; "final" is its 3x512 action head
+    "final": "final", "headWide": "head-3x1024", "headDeep": "head-6x512", "headFlow": "flow-head-3x512",
+    "latentWide": "latent-256", "headLatent": "head-3x512-latent-256", "headNodec": "head-3x512-no-decoder",
+    "headPix": "pixel-input-head-3x512",
 }
 
 
@@ -64,6 +68,8 @@ def main():
                 put(P + short, m, "{:.1f}")
                 put(P + short + "Sd", sd, "{:.1f}")
                 put(P + short + "Succ", sum(round(s[key]["success_rate"] * s[key]["episodes"]) for s in S), "{:d}")
+                if key == "wam_test" and all("vla_test" in s for s in S):   # how far the WAM's own policy trails mini-VLA
+                    put(P + "Gap", stat([s["vla_test"]["mean_max_coverage"] - s["wam_test"]["mean_max_coverage"] for s in S], 100)[0], "{:.1f}")
                 if "plan_checks" in S[0][key]:
                     for c, cname in [("expected_gain_px", "Expected"), ("real_gain_px", "Real"), ("plan_error_px", "PlanErr")]:
                         put(P + short + cname, stat([s[key]["plan_checks"][c] for s in S])[0], "{:.1f}")
@@ -129,11 +135,26 @@ def main():
         put("PTimagineTenMs", d["latency_ms"]["imagine_10_states"], "{:.2f}")
         put("PTimagineTenImgMs", d["latency_ms"]["imagine_10_states_and_images"], "{:.1f}")
 
-    eff = os.path.join(RESULTS, "final", "efficiency", "efficiency.json")
-    if os.path.exists(eff):   # the final model predicts chunks of 8 actions, so its action head is slightly larger
-        d = json.load(open(eff))
-        put("PTfinalParamsWam", d["parameters"]["wam_total"], "{:,d}")
-        put("PTfinalParamsVla", d["parameters"]["vla_total"], "{:,d}")
+    for prefix, folder in RUNS.items():   # parameter counts, from each run's own benchmark
+        eff = os.path.join(RESULTS, folder, "efficiency", "efficiency.json")
+        if os.path.exists(eff):
+            d = json.load(open(eff))
+            put("PT" + prefix + "ParamsWam", d["parameters"]["wam_total"], "{:,d}")
+            put("PT" + prefix + "ParamsVla", d["parameters"]["vla_total"], "{:,d}")
+            put("PT" + prefix + "ParamsWamM", d["parameters"]["wam_total"] / 1e6, "{:.2f}")
+            put("PT" + prefix + "ParamsVlaM", d["parameters"]["vla_total"] / 1e6, "{:.2f}")
+            put("PT" + prefix + "ParamsHead", d["parameters"]["wam"]["policy_head"], "{:,d}")
+            if "image_decoder" in d["parameters"]["wam"]:
+                put("PT" + prefix + "ParamsNodecM", (d["parameters"]["wam_total"] - d["parameters"]["wam"]["image_decoder"]) / 1e6, "{:.2f}")
+
+    laptop = os.path.join(RESULTS, "final", "efficiency-laptop", "efficiency.json")
+    if os.path.exists(laptop):   # the final model on one laptop CPU thread
+        d = json.load(open(laptop))
+        put("PTfinalLaptopStepWam", d["train_step_ms"]["wam"] / 1e3, "{:.2f}")
+        put("PTfinalLaptopStepStates", d["train_step_ms"]["wam_state_only"] / 1e3, "{:.2f}")
+        put("PTfinalLaptopStepVla", d["train_step_ms"]["vla"], "{:.0f}")
+        put("PTfinalLaptopActMs", d["latency_ms"]["act_wam"], "{:.2f}")
+        put("PTfinalLaptopPlanMs", d["latency_ms"]["plan_step"], "{:.0f}")
 
     laptop = os.path.join(RESULTS, "baseline", "efficiency-laptop", "efficiency.json")
     if os.path.exists(laptop):   # one thread of an Apple-silicon laptop CPU, like the point-mass benchmark
