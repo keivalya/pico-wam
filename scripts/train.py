@@ -220,6 +220,8 @@ def parse_args():
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr-schedule", type=str, default="constant", choices=["constant", "cosine"],
+                        help="constant, or cosine decay from --lr to 0 over the epochs.")
     parser.add_argument("--seed", type=int, default=0)
 
     # Model flags.
@@ -423,10 +425,16 @@ def main():
     )
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    # --lr-schedule cosine: the learning rate glides from --lr down to 0 over the epochs,
+    # big steps early to learn fast, small steps at the end to settle into a minimum
+    # (untested in the study; every reported run uses a constant rate)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs) if args.lr_schedule == "cosine" else None
 
     history = []
     for epoch in range(args.epochs):
         train_logs = run_epoch(model, full.batches(train_starts, args.batch_size, shuffle=True), weights, optimizer)
+        if scheduler is not None:
+            scheduler.step()   # once per epoch
         val_logs = run_epoch(model, full.batches(val_starts, args.batch_size, shuffle=False), weights) if len(val_starts) else {}
 
         history.append({"epoch": epoch + 1, "train": train_logs, "val": val_logs})
