@@ -262,7 +262,9 @@ def main():
         export_episode_views(*models[0])
         export_what_if(models, env_name)
         export_latent_map(*models[0])
-    stats = export_keypoints({args.name: models}, env_name)
+    stats = {}
+    if hasattr(models[0][0].img_encoder, "keypoints"):  # only the spatial-softmax encoder has keypoints
+        stats = export_keypoints({args.name: models}, env_name)
 
     for f in sorted(os.listdir(OUT)):
         print("wrote", os.path.join(OUT, f))
