@@ -38,7 +38,9 @@ Stage 4's step beyond the toy was taken with Push-T, trained on LeRobot's 206 hu
 
 A capacity round on top of the 100-epoch model then showed that the action head, one hidden layer of 128 units, was the bottleneck: three layers of 512 raised every policy and nearly closed the gap between the WAM's own policy and mini-VLA, while wider or deeper heads and a wider latent did not help further. Without state input, only the WAM learns to push the T. The head sizes were compared on the test starts.
 
-Still open: oracle-dynamics and direct-state planners with the same cost, a history-based baseline, a learned cost, head sizes chosen on validation starts, and branches that a real robot could collect.
+A dream round then checked dreams against the simulator: with 5-step training windows, dreams stay accurate for about 10 to 15 steps. Without the image decoder, 15-step windows with 16-step branches halve the error at 40 steps; with the decoder they help less and lower planning. Weighting the moving pixels in the image loss sharpens the decoded block and gives the most planning successes so far, and is now the default.
+
+Still open: oracle-dynamics and direct-state planners with the same cost, a history-based baseline, a learned cost, head sizes chosen on validation starts, long training windows that keep the decoder's benefits, and branches that a real robot could collect.
 
 ## Nearest prior work and novelty risk
 

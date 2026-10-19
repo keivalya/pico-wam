@@ -14,7 +14,7 @@ Its example task is **Push-T**, the benchmark from [Diffusion Policy](https://di
 <div align="center">
   <img src="./assets/pusht_dream.gif" alt="A real Push-T episode next to pico-WAM's imagined and dreamed versions of it, and the dream played in the simulator">
   <br>
-  <em>The final pico-WAM model on an unseen human demonstration. Real: the person's episode. Imagined: what pico-WAM predicts from the first frame alone, given the person's actions. Dreamed: its own policy choosing every action inside its imagination; like the planner, it looks at the world again every 12 steps, since a dream stays accurate for about that long. Dream, for real: the same dreamed actions played in the simulator, the fair check of the dream. Frames are drawn from the states the model imagines.</em>
+  <em>The final pico-WAM model on an unseen human demonstration. Real: the person's episode. Imagined: what pico-WAM predicts from the first frame alone, given the person's actions. Dreamed plan: the plan the model picks inside its imagination with its planner; it carries out 4 steps of it, looks at the world again and plans again, and keeps going after the person's episode ends. Dream, for real: the same plan played in the simulator, the fair check of the dream. Frames are drawn from the states the model imagines.</em>
 </div>
 
 The codebase is intentionally small (the whole model package is under 1,000 lines) so that,
@@ -41,9 +41,11 @@ On Push-T:
 - **Showing the world model other pushes fixes it.** Branching every human demonstration in the simulator, with the human's actions slightly perturbed, brings the T's error down to 0.45× "stays put". Only the world model learns from the branches.
 - **Planning with the world model beats the policy, if the search stays close to the policy.** A stronger search makes the model expect 82.1 px of improvement from its plans while the simulator delivers −1.9 px: the planner finds the model's errors. A planner that reuses its last plan drifts the same way over an episode, so the final planner restarts every search from the policy's plan.
 - **The action head was the bottleneck.** Widening the policy's head from one hidden layer of 128 to three of 512 is the biggest single improvement. Planning goes from 77 to 121 successes in 300 unseen episodes, and the WAM's own policy from 7 to 85. Wider or deeper heads, and a wider latent, add parameters without helping.
-- **Four simple changes make it succeed.** With action chunks, branched data, a planner that restarts from the policy and the 3×512 head, the planning WAM succeeds in 121 of 300 unseen episodes and the behavioral-cloning baseline mini-VLA in 116.
+- **Dreams stay accurate for about 10 to 15 steps.** When the policy acts inside the model's imagination, the imagined T is 4.6 px from the simulator's after 10 steps and 20.7 px after 40, so the planner looks 12 steps ahead and looks at the world again often. Training on 15-step windows halves the long-range error when the model has no image decoder.
+- **A sharper decoder helps too.** Weighting the pixels that move in the image loss cuts the decoder's error on the T and the agent from 0.0119 to 0.0067 and raises planning to 144 successes.
+- **Five simple changes make it succeed.** With action chunks, branched data, a planner that restarts from the policy, the 3×512 head and the moving-pixel loss, the planning WAM succeeds in 144 of 300 unseen episodes, more than the behavioral-cloning baseline mini-VLA's 110 in each of three runs.
 - **Without the state, only the WAM works.** From images and the instruction alone, the WAM succeeds in 46 episodes by planning and 43 on its own; mini-VLA succeeds in 0.
-- **It's cheap.** The final WAM has 1.33 million parameters, 0.96 million without its image decoder, which the planner does not need. A planning step, 256 imagined futures of 12 steps, takes 36 ms on one laptop CPU thread, and the whole Push-T study took about 90 GPU-hours.
+- **It's cheap.** The final WAM has 1.33 million parameters, 0.96 million without its image decoder, which the planner does not need. A planning step, 256 imagined futures of 12 steps, takes 33 ms on one laptop CPU thread, and the whole Push-T study took about 100 GPU-hours.
 
 On the point-mass world:
 
@@ -142,7 +144,7 @@ python -m scripts.collect_data \
 
 ## Train your WAM model
 
-Train the policy and the world model together, on the demonstrations plus their branches. The final configuration predicts chunks of 8 actions, executing 4 before predicting again, with an action head of three hidden layers of 512, and trains for 100 epochs. Use a GPU if you have one: `--device auto` picks CUDA or Apple's MPS. Leave out `--predict_image` to train about five times faster: the image decoder lets you watch the model's imagination, but the planner does not need it.
+Train the policy and the world model together, on the demonstrations plus their branches. The final configuration predicts chunks of 8 actions, executing 4 before predicting again, with an action head of three hidden layers of 512 and an image loss that counts the moving pixels 11 times, and trains for 100 epochs. Use a GPU if you have one: `--device auto` picks CUDA or Apple's MPS. Leave out `--predict_image` to train about five times faster: the image decoder lets you watch the model's imagination, but the planner does not need it.
 
 ```
 python -m scripts.train \
@@ -152,6 +154,7 @@ python -m scripts.train \
   --action-chunk 8 \
   --policy-hidden 512 \
   --policy-layers 3 \
+  --image-focus 10 \
   --predict_state \
   --predict_image \
   --epochs 100 \
@@ -192,7 +195,7 @@ python -m scripts.visualize_rollout --checkpoint checkpoints/wam.pt --video --gi
 bash scripts/run.sh
 ```
 
-On one V100 GPU, the three runs of the final configuration take about four hours, including all tests. Set `PREDICT_IMAGE=0` to skip the image decoder: the run then takes about an hour, and the planner does not need the decoder. In the stored run, the planning WAM succeeds in 121 of 300 unseen episodes and mini-VLA in 116, and the world model predicts the state 15 steps ahead with nMSE 0.0094, against 0.4973 for assuming nothing moves.
+On one V100 GPU, the three runs of the final configuration take about three hours, including all tests. Set `PREDICT_IMAGE=0` to skip the image decoder: the run then takes about an hour, and the planner does not need the decoder. In the stored run, the planning WAM succeeds in 144 of 300 unseen episodes and mini-VLA in 110, and the world model predicts the state 15 steps ahead with nMSE 0.0064, against 0.4973 for assuming nothing moves.
 
 ## Reproducing the paper
 
