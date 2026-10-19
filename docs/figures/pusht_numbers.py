@@ -31,9 +31,12 @@ RUNS = {  # macro prefix -> results folder
     "chunkBranch": "chunks-branched", "chunkRestart": "chunks-restart-planner", "branchRestart": "branched-restart-planner",
     "branchRestartEpochs": "branched-restart-100-epochs",
     # the capacity round, on top of branched-restart-100-epochs; "final" is its 3x512 action head
-    "final": "final", "headWide": "head-3x1024", "headDeep": "head-6x512", "headFlow": "flow-head-3x512",
+    "headBase": "head-3x512", "headWide": "head-3x1024", "headDeep": "head-6x512", "headFlow": "flow-head-3x512",
     "latentWide": "latent-256", "headLatent": "head-3x512-latent-256", "headNodec": "head-3x512-no-decoder",
     "headPix": "pixel-input-head-3x512",
+    # the dream round, on top of head-3x512; "final" adds the image loss on moving pixels
+    "final": "final", "hzFifteen": "horizon-15", "hzEightNodec": "head-3x512-no-decoder-horizon-8",
+    "hzFifteenNodec": "head-3x512-no-decoder-horizon-15",
 }
 
 
@@ -95,6 +98,23 @@ def main():
                 put(P + "ImgFifteen", stat([x["image_mse"][15] for x in e])[0], "{:.5f}")
                 put(P + "ImgCopyFifteen", stat([x["image_mse_copy"][15] for x in e])[0], "{:.5f}")
             put(P + "RtwoFifteen", stat([np.mean([r for r in x["state_r2"][15] if r is not None]) for x in e])[0], "{:.3f}")
+
+    for prefix, folder in RUNS.items():   # dreams checked in the simulator, and the decoder on moving pixels
+        rows = []
+        for d in sorted(glob.glob(os.path.join(RESULTS, folder, "seed[0-9]*"))):
+            e = json.load(open(os.path.join(d, "wam_eval.json"))) if os.path.exists(os.path.join(d, "wam_eval.json")) else {}
+            extra = os.path.join(d, "wam_eval_dreams.json")   # computed afterwards for runs older than the check
+            if "dream" not in e and os.path.exists(extra):
+                e = {**e, **json.load(open(extra))}
+            if "dream" in e:
+                rows.append(e)
+        if rows:
+            P = "PT" + prefix
+            for k, kname in [(5, "Five"), (10, "Ten"), (20, "Twenty"), (40, "Forty")]:
+                put(P + "DreamAgent" + kname, np.mean([r["dream"]["agent_px"][k - 1] for r in rows]), "{:.1f}")
+                put(P + "DreamT" + kname, np.mean([r["dream"]["block_px"][k - 1] for r in rows]), "{:.1f}")
+            if all("image_mse_moving" in r for r in rows):
+                put(P + "MovingImg", np.mean([r["image_mse_moving"] for r in rows]), "{:.4f}")
 
     checks_path = os.path.join(RESULTS, "data_checks.json")
     if os.path.exists(checks_path):

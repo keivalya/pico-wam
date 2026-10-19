@@ -351,7 +351,7 @@ RECIPE = [("baseline", "study base,\none action per step"), ("action-chunks", "a
           ("chunks-restart-planner", "chunks, restarting planner"),
           ("branched-restart-planner", "chunks, branched data,\nrestarting planner"),
           ("branched-restart-100-epochs", "the same, 100 epochs"),
-          ("final", "+ action head 3×512")]
+          ("head-3x512", "+ action head 3×512"), ("final", "+ image loss on moving pixels")]
 POLICIES = [("vla_test", VLA, "s", 0.22, "mini-VLA"), ("wam_test", WAM, "o", 0.0, "WAM, reactive"),
             ("wam_mpc_test", PLAN, "D", -0.22, "WAM, planning")]
 
@@ -638,7 +638,7 @@ def fig_efficiency():
 # ------------------------------------------------------------ model size
 
 
-CAPACITY = [("branched-restart-100-epochs", "head 1×128"), ("final", "head 3×512"), ("head-3x1024", "head 3×1024"),
+CAPACITY = [("branched-restart-100-epochs", "head 1×128"), ("head-3x512", "head 3×512"), ("head-3x1024", "head 3×1024"),
             ("head-6x512", "head 6×512"), ("flow-head-3x512", "flow head 3×512"), ("latent-256", "latent 256, head 1×128"),
             ("head-3x512-latent-256", "latent 256, head 3×512"), ("head-3x512-no-decoder", "head 3×512, no decoder")]
 
@@ -684,7 +684,7 @@ def fig_capacity(exps):
 
 def fig_pixels(exps):
     """With pixels only, the world model's training signal is what makes the policy work."""
-    groups = [("final", "state + image\ninput"), ("pixel-input-head-3x512", "image input\nonly")]
+    groups = [("head-3x512", "state + image\ninput"), ("pixel-input-head-3x512", "image input\nonly")]
     groups = [(n, l) for n, l in groups if n in exps]
     fig, axes = fs.figure_grid(1, 2, width=W, ratio=0.36)
     for ax, getter, label in [(axes[0], lambda s, k: coverage(s, k), "best coverage, %"),
@@ -702,6 +702,68 @@ def fig_pixels(exps):
     axes[1].legend(loc="upper right", fontsize=5.5)
     fs.panel_labels(axes)
     finish(fig, "fig-pusht-pixels")
+
+
+# ------------------------------------------------------------ dreams and the decoder
+
+
+DREAMS = [("head-3x512-no-decoder", "no decoder, $H=5$", fs.PALETTE["blue"], ":"),
+          ("head-3x512-no-decoder-horizon-8", "no decoder, $H=8$", fs.PALETTE["cyan"], ":"),
+          ("head-3x512-no-decoder-horizon-15", "no decoder, $H=15$", fs.PALETTE["purple"], ":"),
+          ("head-3x512", "decoder, $H=5$", fs.PALETTE["blue"], "-"),
+          ("horizon-15", "decoder, $H=15$", fs.PALETTE["purple"], "-"),
+          ("final", "decoder, $H=5$, moving pixels", fs.PALETTE["green"], "-")]
+
+
+def dream_rows(name):
+    rows = []
+    for d in sorted(glob.glob(os.path.join(RESULTS, name, "seed[0-9]*"))):
+        e = json.load(open(os.path.join(d, "wam_eval.json")))
+        extra = os.path.join(d, "wam_eval_dreams.json")
+        if "dream" not in e and os.path.exists(extra):
+            e = {**e, **json.load(open(extra))}
+        rows.append(e)
+    return rows
+
+
+def fig_dreams():
+    """How long a dream stays right, and what the moving-pixel loss does to the decoder."""
+    fig = plt.figure(figsize=(W, 0.5 * W), layout="constrained")
+    gs = fig.add_gridspec(1, 2, width_ratios=[1.0, 1.25])
+    ax = fig.add_subplot(gs[0])
+    for name, label, color, ls in DREAMS:
+        rows = dream_rows(name)
+        if not rows or any("dream" not in r for r in rows):
+            continue
+        err = np.stack([r["dream"]["block_px"] for r in rows])
+        k = np.arange(1, err.shape[1] + 1)
+        ax.plot(k, err.mean(0), color=color, ls=ls, lw=1.2, label=label)
+    ax.axvline(12, color=REF, lw=0.6, ls="--")
+    ax.text(12.5, 1.0, "planner horizon", color=REF, fontsize=5.5, rotation=90, va="bottom", transform=ax.get_xaxis_transform())
+    ax.set_xlabel("steps dreamed ahead")
+    ax.set_ylabel("T error against the simulator, px")
+    ax.set_ylim(0, None)
+    ax.legend(loc="upper left", fontsize=5.5)
+
+    picks = [2, 4, 6, 7]   # indices into the stored strip
+    strips = [("real", figdata("episode_strip", "head-3x512")["real"]),
+              ("imagined,\npixel loss", figdata("episode_strip", "head-3x512")["imagined"]),
+              ("imagined,\nmoving pixels", figdata("episode_strip", "final")["imagined"])]
+    t = figdata("episode_strip", "final")["timesteps"]
+    sub = gs[1].subgridspec(len(strips), len(picks), wspace=0.03, hspace=0.05)
+    first = None
+    for r, (name, frames) in enumerate(strips):
+        for c, i in enumerate(picks):
+            a = fig.add_subplot(sub[r, c])
+            a.imshow(frames[i], interpolation="nearest")
+            a.set_axis_off()
+            if r == 0:
+                a.text(0.5, 1.04, f"$t={t[i]}$", transform=a.transAxes, ha="center", va="bottom", fontsize=6)
+            if c == 0:
+                a.text(-0.08, 0.5, name, transform=a.transAxes, ha="right", va="center", fontsize=6)
+            first = first or a
+    fs.panel_labels([ax, first], pad=4.0)
+    finish(fig, "fig-pusht-dreams")
 
 
 # ------------------------------------------------------------ illustrations
@@ -836,6 +898,7 @@ def main():
     fig_ablations(exps)
     fig_recipe(exps)
     fig_capacity(exps)
+    fig_dreams()
     fig_pixels(exps)
     if os.path.exists(os.path.join(RESULTS, "final", "figure-data", "planner.npz")):
         fig_branches()
