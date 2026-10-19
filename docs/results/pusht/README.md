@@ -15,6 +15,7 @@ Files in a seed folder:
 | `wam_mpc_test.json` | closed-loop test of the WAM planning with its world model |
 | `wam_mpc_warm_test.json` | the same, with the older planner whose search starts from the last plan |
 | `wam_mpc_*_test.json` | the planner-budget variants: `wide`, `cem` and `noprior` |
+| `wam_eval_dreams.json` | for `head-3x512` and `head-3x512-no-decoder`, which ran before `scripts/evaluate.py` checked dreams: the dream check and the decoder's error on moving pixels, computed afterwards from each seed's checkpoint |
 
 `data_checks.json` checks the converted LeRobot data against the simulator
 (`scripts/pusht_data_checks.py`). `baseline/`, `final/` and the 100-epoch folders also hold the linear-model audit
@@ -57,14 +58,18 @@ Each experiment was run from a git branch that changes one setting of its parent
 | `chunks-restart-planner` | each plan search restarts from the policy's plan | `action-chunks` | `orx/push-t-chunks-planner-restarts-from-the-policy` | 580cf45 | e944bedd |
 | `branched-restart-planner` | branched data and the restarting planner | `chunks-branched` | `orx/push-t-branched-data-planner-restarts-from-the-p` | 4946f33 | a9587dbf |
 | `branched-restart-100-epochs` | 100 epochs | `branched-restart-planner` | `orx/push-t-branched-data-planner-restarts-100-epochs` | 0aa97c2 | 0378c41c |
-| `final` | action head with 3 hidden layers of 512: the final configuration, and the defaults of `scripts/run.sh` | `branched-restart-100-epochs` | `orx/push-t-bigger-policy-head-3x512-mlp` | cbd8ead | 09fe70a3 |
-| `head-3x1024` | action head 3 x 1024 | `final` | `orx/push-t-policy-head-3x1024` | 7f79088 | 3ebd6c3a |
-| `head-6x512` | action head 6 x 512 | `final` | `orx/push-t-policy-head-6x512` | 6e6178c | 363ef8e6 |
+| `head-3x512` | action head with 3 hidden layers of 512 | `branched-restart-100-epochs` | `orx/push-t-bigger-policy-head-3x512-mlp` | cbd8ead | 09fe70a3 |
+| `head-3x1024` | action head 3 x 1024 | `head-3x512` | `orx/push-t-policy-head-3x1024` | 7f79088 | 3ebd6c3a |
+| `head-6x512` | action head 6 x 512 | `head-3x512` | `orx/push-t-policy-head-6x512` | 6e6178c | 363ef8e6 |
 | `flow-head-3x512` | flow-matching action head, 3 x 512 | `branched-restart-100-epochs` | `orx/push-t-flow-matching-policy-head-3x512` | 05e036e | 2b61d201 |
 | `latent-256` | latent width 256, dynamics 512 wide, one-layer head | `branched-restart-100-epochs` | `orx/push-t-scale-up-2x-wider-latent` | 2e70aa7 | 12b3b471 |
-| `head-3x512-latent-256` | latent width 256 | `final` | `orx/push-t-3x512-head-2x-wider-latent` | c0dc7ae | a336b859 |
-| `head-3x512-no-decoder` | no image decoder | `final` | `orx/push-t-3x512-head-no-image-decoder` | 27f3acc | d75345a4 |
-| `pixel-input-head-3x512` | images and language only, no state input | `final` | `orx/push-t-pixel-input-3x512-head` | 7fe8633 | 5f3cf816 |
+| `head-3x512-latent-256` | latent width 256 | `head-3x512` | `orx/push-t-3x512-head-2x-wider-latent` | c0dc7ae | a336b859 |
+| `head-3x512-no-decoder` | no image decoder | `head-3x512` | `orx/push-t-3x512-head-no-image-decoder` | 27f3acc | d75345a4 |
+| `pixel-input-head-3x512` | images and language only, no state input | `head-3x512` | `orx/push-t-pixel-input-3x512-head` | 7fe8633 | 5f3cf816 |
+| `final` | image loss weights the moving pixels 11 times: the final configuration, and the defaults of `scripts/run.sh` | `head-3x512` | `orx/push-t-sharper-decoder-weight-the-moving-pixels` | 84d54c1 | 6fa5bffc |
+| `head-3x512-no-decoder-horizon-8` | 8-step training windows | `head-3x512-no-decoder` | `orx/push-t-imagine-8-steps-in-training` | 68d4b87 | 56c90f26 |
+| `head-3x512-no-decoder-horizon-15` | 15-step training windows, 16-step branches | `head-3x512-no-decoder` | `orx/push-t-imagine-15-steps-in-training` | 0b4fc3c | 473446ab |
+| `horizon-15` | the image decoder back on, on an A100 | `head-3x512-no-decoder-horizon-15` | `orx/push-t-imagine-15-steps-with-the-image-decoder` | 8602278 | 2b085925 |
 
 The `planner-budget` job hit its 6-hour limit after all three seeds had been tested,
 while computing the extras, so it has no `summary.json`; its numbers are read from the
