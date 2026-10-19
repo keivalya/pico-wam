@@ -38,7 +38,7 @@ HORIZON="${HORIZON:-5}"                  # imagination steps per training window
 STATE_WEIGHT="${STATE_WEIGHT:-0.5}"
 PREDICT_IMAGE="${PREDICT_IMAGE:-1}"      # 1 = the WAM also decodes images, so you can watch its imagination; 0 trains about 5x faster
 IMAGE_WEIGHT="${IMAGE_WEIGHT:-1.0}"
-IMAGE_FOCUS="${IMAGE_FOCUS:-0}"          # image loss: pixels that move, the T and the agent, count 1 + IMAGE_FOCUS times
+IMAGE_FOCUS="${IMAGE_FOCUS:-10}"         # image loss: pixels that move, the T and the agent, count 1 + IMAGE_FOCUS times
 LATENT_WEIGHT="${LATENT_WEIGHT:-1.0}"
 STATE_INPUT="${STATE_INPUT:-1}"          # 0 = image + language only (no state_t input)
 ACTION_HEAD="${ACTION_HEAD:-mlp}"        # mlp, diffusion or flow

@@ -108,9 +108,9 @@ def plot_imagination(model, ep, horizon, n_frames, out_dir):
     rows = [("real", ep["images"])]
     if "image" in recon:
         rows += [
-            ("reconstructed\n(decode z_t)", recon["image"]),
-            ("imagined from t=0\n(real actions)", imag["image"][0]),
-            ("dreamed from t=0\n(own policy)", dream["image"][0]),
+            ("reconstructed,\ndecoded z_t", recon["image"]),
+            ("imagined from t=0,\nreal actions", imag["image"][0]),
+            ("dreamed from t=0,\nown policy", dream["image"][0]),
         ]
 
     fig, axes = plt.subplots(len(rows), len(cols), figsize=(1.1 * len(cols) + 1.2, 1.15 * len(rows)), squeeze=False)
@@ -214,7 +214,7 @@ def plot_latent_map(model, data, episodes, ep, z_real, imag, labels, out_dir):
     ax2.set_xticks(range(len(moving)))
     ax2.set_xticklabels([labels[j] for j in moving], rotation=60, ha="right")
     ax2.set_yticks(range(n_pc))
-    ax2.set_yticklabels([f"PC{i + 1} ({explained[i]:.0%})" for i in range(n_pc)])
+    ax2.set_yticklabels([f"PC{i + 1}, {explained[i]:.0%}" for i in range(n_pc)])
     for i in range(n_pc):
         for j in range(len(moving)):
             if abs(corr[i, j]) > 0.5:
@@ -303,9 +303,9 @@ def plot_what_if(model, ep, labels, env_name, out_dir, horizon=15):
 
 def plot_horizon(results, labels, out_dir):
     k = np.array(results["horizon"])
-    panels = [("state_nmse", "state_nmse_copy", "state error (normalized MSE)")]
+    panels = [("state_nmse", "state_nmse_copy", "state error, normalized MSE")]
     if results["image_mse"]:
-        panels.append(("image_mse", "image_mse_copy", "image error (pixel MSE)"))
+        panels.append(("image_mse", "image_mse_copy", "image error, pixel MSE"))
     has_r2 = bool(results["state_r2"])
 
     ncols = len(panels) + int(has_r2)
@@ -366,41 +366,46 @@ def plot_keypoints(model, ep, n_frames, out_dir):
 # ------------------------------------------------------------------- video
 
 
-LOOK_EVERY = 12   # like the planner: imagine 12 steps, then look at the world again
+LOOK_EVERY = 4   # carry out 4 steps of the chosen plan, then look at the world again
 
 
 @torch.no_grad()
-def dream_for_real(model, ep, steps, every=LOOK_EVERY):
+def dream_for_real(model, ep, max_steps=300, every=LOOK_EVERY):
     """
-    Push-T: the policy acts inside the model's imagination for `every` steps, the
-    same actions are then played in the simulator, and the next dream starts from
-    what really happened. Returns the dreamed and the real states, (steps + 1, 8) each.
+    Push-T: the planner (scripts/plan.py) picks a 12-step plan inside the model's
+    imagination; the first `every` steps of it are played in the simulator, and the
+    next plan starts from what really happened, until the T covers the target or
+    `max_steps` pass. Returns the imagined and the real states, each (T + 1, 8).
     """
-    from envs.pusht_env import PushTEnv
+    from envs.pusht_env import SUCCESS_COVERAGE, PushTEnv, coverage, from_state
+    from scripts.plan import LatentPlanner
 
-    env = PushTEnv(image_size=model.config["image_size"])
+    env, planner = PushTEnv(image_size=model.config["image_size"]), LatentPlanner(model)
     dev = ep["states"].device
     s = ep["states"][0].cpu().numpy()
     dreamed, real = [s], [s]
-    while len(real) <= steps:
+    while len(real) <= max_steps and coverage(from_state(s)[4:7]) <= SUCCESS_COVERAGE:
         img = torch.from_numpy(env._render(s)).permute(2, 0, 1).float()[None].div(255.0).to(dev)
-        d = model.imagine(img, ep["text_ids"], torch.from_numpy(s).float()[None].to(dev), every)
-        dreamed += list(d["state"][0, 1:].cpu().numpy())
-        sim = env.simulate(s, d["actions"][0].cpu().numpy())
+        state = torch.from_numpy(s).float()[None].to(dev)
+        planner.act(img, ep["text_ids"], state)
+        plan = planner.last["plan"][:every]
+        imagined = model.imagine(img, ep["text_ids"], state, len(plan), actions=plan[None])["state"][0, 1:]
+        dreamed += list(imagined.cpu().numpy())
+        sim = env.simulate(s, plan.cpu().numpy())
         real += list(sim)
         s = sim[-1]
-    return np.asarray(dreamed[: steps + 1]), np.asarray(real[: steps + 1])
+    return np.asarray(dreamed), np.asarray(real)
 
 
 @torch.no_grad()
 def save_dream_video(model, ep, imag, dream, out_dir, gif=False, env_name="toy"):
     """
     Push-T, four panels: the real episode | imagined from its first frame with the
-    person's actions | dreamed, the model's own policy acting in its imagination and
-    looking at the world again every LOOK_EVERY steps | the dreamed actions played
-    in the simulator. Frames are drawn from the states the model imagines, which its
-    linear readout gives to within a few pixels; the image decoder's pictures of the
-    T are blurrier. Other envs: real | imagined | dreamed, as decoded images.
+    person's actions | dreamed plan, the plan the model picks inside its imagination,
+    looking at the world again every LOOK_EVERY steps | the same plan played in the
+    simulator. Frames are drawn from the states the model imagines, which its linear
+    readout gives to within a few pixels; the image decoder's pictures are blurrier.
+    Other envs: real | imagined | dreamed, as decoded images.
     """
     import imageio.v2 as imageio
     import cv2
@@ -413,16 +418,17 @@ def save_dream_video(model, ep, imag, dream, out_dir, gif=False, env_name="toy")
         from envs.pusht_env import draw
 
         T = imag["state"].shape[1] - 1
-        dreamed, real = dream_for_real(model, ep, T)
+        dreamed, real = dream_for_real(model, ep)
         states, imagined = ep["states"].cpu().numpy(), imag["state"][0].cpu().numpy()
+        n = max(T, len(real) - 1) + 8   # hold the last frames for a moment
         frames = [
             np.concatenate([
-                label(draw(states[t]), f"real t={t}"),
-                label(draw(imagined[t]), "imagined"),
-                label(draw(dreamed[t]), "dreamed: looks again" if t and t % LOOK_EVERY == 0 else "dreamed"),
-                label(draw(real[t]), "dream, for real"),
+                label(draw(states[min(t, T)]), f"real t={min(t, T)}" + (", done" if t > T else "")),
+                label(draw(imagined[min(t, T)]), "imagined"),
+                label(draw(dreamed[min(t, len(dreamed) - 1)]), f"dreamed plan t={min(t, len(dreamed) - 1)}"),
+                label(draw(real[min(t, len(real) - 1)]), "dream, for real"),
             ], axis=1)
-            for t in range(T + 1)
+            for t in range(n + 1)
         ]
     elif "image" in imag:
         frames = [
@@ -436,13 +442,13 @@ def save_dream_video(model, ep, imag, dream, out_dir, gif=False, env_name="toy")
     else:
         return
     path = os.path.join(out_dir, "dream.mp4")
-    with imageio.get_writer(path, fps=8) as w:
+    with imageio.get_writer(path, fps=12) as w:
         for f in frames:
             w.append_data(f)
     print("Saved:", path)
     if gif:
         path = os.path.join(out_dir, "dream.gif")
-        imageio.mimsave(path, frames, duration=1000 / 8, loop=0)
+        imageio.mimsave(path, frames, duration=1000 / 12, loop=0)
         print("Saved:", path)
 
 
