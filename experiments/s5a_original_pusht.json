@@ -1,0 +1,23 @@
+{
+  "name": "ral-s5a-original-pusht",
+  "source_study": "results/ral-evidence-v2",
+  "training_seeds": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+  "evaluations": [
+    {"name": "bc_policy", "policy_from": "bc", "control": "policy"},
+    {"name": "wam_branch_policy", "policy_from": "wam_branch", "control": "policy"},
+    {"name": "wam_branch_warm", "policy_from": "wam_branch", "control": "warm"},
+    {"name": "wam_branch_restart", "policy_from": "wam_branch", "control": "restart"},
+    {"name": "wam_demo_restart", "policy_from": "wam_demo", "control": "restart"}
+  ],
+  "dev_episodes": 1, "test_episodes": 200, "dev_seed_start": 4699000, "test_seed_start": 4600000,
+  "max_steps": 300,
+  "contrasts": [["wam_branch_restart", "bc_policy", "mean_max_coverage"],
+                ["wam_branch_restart", "wam_demo_restart", "mean_max_coverage"],
+                ["wam_branch_restart", "wam_branch_warm", "mean_max_coverage"],
+                ["wam_branch_restart", "wam_branch_policy", "mean_max_coverage"],
+                ["wam_branch_restart", "bc_policy", "success_rate"],
+                ["wam_branch_restart", "bc_policy", "mean_max_reward"]],
+  "primary": "wam_branch_restart minus bc_policy, mean_max_coverage",
+  "hypothesis": "Two-sided: the matched study found restart planning with branches equal to BC in coverage under the modified simulator; this tests whether that ordering, and the branch and restart effects, hold under the original gym-pusht dynamics, starts and success measure.",
+  "status": "Registered before any model was evaluated in gym-pusht. Frozen ral-evidence-v2 checkpoints, no retraining. gym-pusht seeds its own start distribution from each episode seed. The dev bank is unused because nothing is tuned."
+}

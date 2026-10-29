@@ -1,0 +1,20 @@
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Measure & Demos & + branches & Difference \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Prediction, 21 unseen test demonstrations}} \\
+State nMSE, recorded, 15 steps & 0.011 & 0.012 & 0.000 [\ensuremath{-}0.001, 0.002] \\
+Block nMSE, random, 10 steps$^a$ & 0.025 & 0.007 & \ensuremath{-}0.019 [\ensuremath{-}0.023, \ensuremath{-}0.015] \\
+Block RMSE, px, random, 10 steps & 14.8 & 7.1 & \ensuremath{-}7.8 [\ensuremath{-}9.3, \ensuremath{-}6.2] \\
+\multicolumn{4}{@{}l}{\emph{Prediction, 50 fresh scripted-expert episodes}} \\
+State nMSE, recorded, 15 steps & 0.042 & 0.020 & \ensuremath{-}0.022 [\ensuremath{-}0.030, \ensuremath{-}0.014] \\
+Block nMSE, random, 10 steps$^a$ & 0.041 & 0.015 & \ensuremath{-}0.026 [\ensuremath{-}0.032, \ensuremath{-}0.020] \\
+Block RMSE, px, random, 10 steps & 17.3 & 10.6 & \ensuremath{-}6.7 [\ensuremath{-}8.5, \ensuremath{-}4.9] \\
+\multicolumn{4}{@{}l}{\emph{Candidate ranking, 1{,}911 common states}} \\
+Rank correlation with true cost & 0.49 & 0.80 & 0.32 [0.30, 0.34] \\
+Overlap of top 32 & 0.40 & 0.65 & 0.26 [0.24, 0.27] \\
+Selection regret$^b$ & 7.56 & 2.77 & \ensuremath{-}4.79 [\ensuremath{-}5.11, \ensuremath{-}4.47] \\
+Selection optimism$^b$ & 5.93 & 2.27 & \ensuremath{-}3.66 [\ensuremath{-}4.72, \ensuremath{-}2.60] \\
+Gain over policy prior$^{b,c}$ & 4.67 & 7.01 & 2.34 [2.20, 2.47] \\
+\bottomrule
+\end{tabular}

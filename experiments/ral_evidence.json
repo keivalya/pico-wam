@@ -1,0 +1,70 @@
+{
+  "name": "ral-mechanism-v1",
+  "training_seeds": [
+    10,
+    11,
+    12,
+    13,
+    14
+  ],
+  "split_seed": 20261023,
+  "validation_fraction": 0.1,
+  "test_fraction": 0.1,
+  "conditions": [
+    "bc",
+    "current_demo",
+    "current_branch",
+    "wam_demo",
+    "wam_branch"
+  ],
+  "steps": 30000,
+  "batch_size": 64,
+  "learning_rate": 0.001,
+  "save_every": 1000,
+  "horizon": 5,
+  "action_chunk": 8,
+  "d_model": 128,
+  "policy_hidden": 512,
+  "policy_layers": 3,
+  "use_state_input": true,
+  "state_weight": 0.5,
+  "latent_weight": 1.0,
+  "branch_probability": 0.5,
+  "dev_episodes": 50,
+  "test_episodes": 200,
+  "dev_seed_start": 2000000,
+  "test_seed_start": 3000000,
+  "max_steps": 300,
+  "prediction_horizon": 15,
+  "counterfactual_horizon": 10,
+  "counterfactual_plans": 8,
+  "counterfactual_stride": 5,
+  "check_plans_every": 10,
+  "planner": {
+    "horizon": 12,
+    "samples": 256,
+    "elites": 32,
+    "iterations": 1,
+    "noise": 0.1,
+    "approach_weight": 0.05,
+    "prior": "policy"
+  },
+  "primary_estimand": "coverage interaction: (restart-warm) with branches minus (restart-warm) without branches",
+  "primary_metric": "mean_max_coverage",
+  "prediction_status": "Retrospective three-way split of a previously inspected dataset; not a pristine new-data test.",
+  "secondary_contrasts": [
+    "restart_branch_effect: restart planning, wam_branch minus wam_demo",
+    "future_vs_current_branch_policy: reactive policy, wam_branch minus current_branch",
+    "current_branch_vs_demo_policy: reactive policy, current_branch minus current_demo",
+    "restart_branch_vs_bc: wam_branch restart planning minus bc policy",
+    "the primary interaction and all four contrasts above for success rate"
+  ],
+  "descriptive_outcomes": [
+    "success rate, mean maximum coverage and episode length for every condition, method and training seed",
+    "selected-plan checks along each planner's own trajectory: plan error, expected gain, real gain",
+    "wam_* prediction on test demonstrations: factual state nMSE, persistence, counterfactual nMSE, zero-action reference, block position RMSE"
+  ],
+  "precision_rule": "Before freeze, run dev-precision. It splits the development-bank primary interaction into between-run and episode-sampling variance and projects the test-bank 95% half-width. It uses variance only, never the effect estimate. If the projection with the current seeds exceeds precision_target_pp, register a new study with the smallest seed count up to max_training_seeds that meets it, within the approved budget, plus a new test bank; this study's test bank then stays unopened.",
+  "precision_target_pp": 5.0,
+  "max_training_seeds": 15
+}

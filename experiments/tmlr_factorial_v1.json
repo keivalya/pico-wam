@@ -1,0 +1,164 @@
+{
+  "name": "tmlr-proposal-scoring-v1",
+  "source_study": "results/ral-evidence-v2",
+  "code_files": [
+    "followup/tmlr_factorial.py"
+  ],
+  "training_seeds": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24
+  ],
+  "methods": {
+    "LL": {
+      "type": "crossed_planner",
+      "policy_from": "wam_branch",
+      "proposal": "learned",
+      "scoring": "learned"
+    },
+    "LE": {
+      "type": "crossed_planner",
+      "policy_from": "wam_branch",
+      "proposal": "learned",
+      "scoring": "exact"
+    },
+    "EL": {
+      "type": "crossed_planner",
+      "policy_from": "wam_branch",
+      "proposal": "exact",
+      "scoring": "learned"
+    },
+    "EE": {
+      "type": "crossed_planner",
+      "policy_from": "wam_branch",
+      "proposal": "exact",
+      "scoring": "exact"
+    }
+  },
+  "evaluations": [
+    {
+      "name": "LL",
+      "method": "LL",
+      "control": "restart"
+    },
+    {
+      "name": "LE",
+      "method": "LE",
+      "control": "restart"
+    },
+    {
+      "name": "EL",
+      "method": "EL",
+      "control": "restart"
+    },
+    {
+      "name": "EE",
+      "method": "EE",
+      "control": "restart"
+    }
+  ],
+  "dev_episodes": 2,
+  "test_episodes": 100,
+  "dev_seed_start": 8100000,
+  "test_seed_start": 8200000,
+  "max_steps": 300,
+  "check_plans_every": 10,
+  "contrasts": [
+    [
+      "LE",
+      "LL",
+      "mean_max_coverage"
+    ],
+    [
+      "LE",
+      "LL",
+      "success_rate"
+    ],
+    [
+      "EL",
+      "LL",
+      "mean_max_coverage"
+    ],
+    [
+      "EL",
+      "LL",
+      "success_rate"
+    ],
+    [
+      "EE",
+      "EL",
+      "mean_max_coverage"
+    ],
+    [
+      "EE",
+      "EL",
+      "success_rate"
+    ],
+    [
+      "EE",
+      "LE",
+      "mean_max_coverage"
+    ],
+    [
+      "EE",
+      "LE",
+      "success_rate"
+    ],
+    [
+      "EE",
+      "LL",
+      "mean_max_coverage"
+    ],
+    [
+      "EE",
+      "LL",
+      "success_rate"
+    ]
+  ],
+  "primary": "LE minus LL, mean_max_coverage",
+  "hypothesis": "Two-sided scoring effect with learned proposal pipeline fixed; exact versus learned scoring. All other contrasts and interaction secondary.",
+  "reserved_seed_ranges": [
+    [
+      2000000,
+      2000749
+    ],
+    [
+      3000000,
+      3000999
+    ],
+    [
+      3100000,
+      3102999
+    ],
+    [
+      4300000,
+      4300749
+    ],
+    [
+      4400000,
+      4402999
+    ],
+    [
+      5000000,
+      5000049
+    ]
+  ],
+  "status": "Prospective fixed-checkpoint diagnostic; 15 paired seeds, new banks. Two development episodes only check execution, not select hyperparameters. No claim of new method.",
+  "common_seed_start": 8300000,
+  "common_episodes": 10,
+  "common_steps": 150,
+  "common_stride": 30,
+  "common_candidates_per_prior": 128
+}

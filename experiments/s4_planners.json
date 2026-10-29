@@ -1,0 +1,167 @@
+{
+  "name": "ral-s4-dynamics-planners",
+  "source_study": "results/ral-evidence-v2",
+  "code_files": [
+    "followup/planners.py"
+  ],
+  "training_seeds": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24
+  ],
+  "methods": {
+    "latent_branch": {
+      "type": "frozen",
+      "policy_from": "wam_branch",
+      "note": "v2 wam_branch latent dynamics and policy, as in the matched study"
+    },
+    "state_demo": {
+      "type": "state_planner",
+      "policy_from": "wam_branch",
+      "data": "wam_demo",
+      "note": "state-space MLP trained on wam_demo's dynamics windows"
+    },
+    "state_branch": {
+      "type": "state_planner",
+      "policy_from": "wam_branch",
+      "data": "wam_branch",
+      "note": "state-space MLP trained on wam_branch's dynamics windows"
+    },
+    "oracle": {
+      "type": "oracle_planner",
+      "policy_from": "wam_branch",
+      "note": "privileged: the true simulator imagines the prior and scores candidates"
+    }
+  },
+  "evaluations": [
+    {
+      "name": "latent_branch_warm",
+      "method": "latent_branch",
+      "control": "warm"
+    },
+    {
+      "name": "latent_branch_restart",
+      "method": "latent_branch",
+      "control": "restart"
+    },
+    {
+      "name": "state_demo_warm",
+      "method": "state_demo",
+      "control": "warm"
+    },
+    {
+      "name": "state_demo_restart",
+      "method": "state_demo",
+      "control": "restart"
+    },
+    {
+      "name": "state_branch_warm",
+      "method": "state_branch",
+      "control": "warm"
+    },
+    {
+      "name": "state_branch_restart",
+      "method": "state_branch",
+      "control": "restart"
+    },
+    {
+      "name": "oracle_warm",
+      "method": "oracle",
+      "control": "warm"
+    },
+    {
+      "name": "oracle_restart",
+      "method": "oracle",
+      "control": "restart"
+    }
+  ],
+  "dev_episodes": 50,
+  "test_episodes": 200,
+  "dev_seed_start": 4100000,
+  "test_seed_start": 4000000,
+  "max_steps": 300,
+  "check_plans_every": 10,
+  "contrasts": [
+    [
+      "state_branch_restart",
+      "latent_branch_restart",
+      "mean_max_coverage"
+    ],
+    [
+      "state_branch_restart",
+      "state_demo_restart",
+      "mean_max_coverage"
+    ],
+    [
+      "oracle_restart",
+      "latent_branch_restart",
+      "mean_max_coverage"
+    ],
+    [
+      "oracle_restart",
+      "oracle_warm",
+      "mean_max_coverage"
+    ],
+    [
+      "latent_branch_restart",
+      "latent_branch_warm",
+      "mean_max_coverage"
+    ],
+    [
+      "state_branch_restart",
+      "state_branch_warm",
+      "mean_max_coverage"
+    ],
+    [
+      "state_branch_restart",
+      "latent_branch_restart",
+      "success_rate"
+    ],
+    [
+      "oracle_restart",
+      "latent_branch_restart",
+      "success_rate"
+    ]
+  ],
+  "primary": "state_branch_restart minus latent_branch_restart, mean_max_coverage",
+  "hypothesis": "Two-sided: under privileged state input, a state-space model with the same data, hidden size, budget and search may plan as well as or better than the shared latent; a positive or negative difference is informative.",
+  "reserved_seed_ranges": [
+    [
+      2000000,
+      2000749
+    ],
+    [
+      3000000,
+      3000999
+    ],
+    [
+      3100000,
+      3102999
+    ],
+    [
+      4300000,
+      4300749
+    ],
+    [
+      4400000,
+      4402999
+    ],
+    [
+      5000000,
+      5000049
+    ]
+  ],
+  "status": "Registered before any state model was trained. Policy prior and planner hyperparameters are the frozen ral-evidence-v2 ones; no tuning."
+}

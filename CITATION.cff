@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "Please cite this software when using the implementation or reproduction workflows."
+type: software
+title: "pico-WAM: A Compact World Action Model"
+authors:
+  - family-names: Pandya
+    given-names: Keivalya
+version: 0.1.0
+date-released: 2026-10-29
+license: MIT
+repository-code: "https://github.com/keivalya/pico-wam"
+url: "https://github.com/keivalya/pico-wam"

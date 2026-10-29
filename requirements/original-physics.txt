@@ -1,0 +1,4 @@
+# Install in a separate virtual environment: gym-pusht 0.1.8 requires Pymunk 6.
+-r common.txt
+pymunk==6.11.1
+gym-pusht==0.1.8

@@ -1,0 +1,13 @@
+{
+  "python": "3.11.9",
+  "platform": "macOS arm64",
+  "quickstart": "passed",
+  "main_unit_integration_tests": 18,
+  "original_physics_tests": 2,
+  "real_mujoco_miniature": "passed",
+  "clean_export_reproduction_check": "passed",
+  "figure_count": 8,
+  "numerical_outputs_exact": 10,
+  "full_retraining": false,
+  "external_reproduction": false
+}

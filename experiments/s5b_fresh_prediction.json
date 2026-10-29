@@ -1,0 +1,17 @@
+{
+  "name": "ral-s5b-fresh-prediction",
+  "source_study": "results/ral-evidence-v2",
+  "conditions": ["wam_demo", "wam_branch"],
+  "episodes": 50,
+  "seed_start": 6000000,
+  "max_steps": 300,
+  "expert_noise": 0.2,
+  "prediction_horizon": 15,
+  "counterfactual_horizon": 10,
+  "counterfactual_plans": 8,
+  "counterfactual_stride": 5,
+  "counterfactual_seed": 424244,
+  "primary": "Ten-step block position RMSE under random actions, wam_branch minus wam_demo, paired over the 15 frozen ral-evidence-v2 training runs.",
+  "distribution_note": "Fresh episodes from the scripted simulator expert with Gaussian action noise 0.2, simulator seeds 6,000,000-6,000,049, never used before. They are independent of the analyzed human collection but not drawn from it: a distribution shift.",
+  "status": "Registered by hash before any checkpoint was scored; metric code identical to the evidence study's."
+}

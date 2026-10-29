@@ -1,0 +1,253 @@
+{
+  "name": "architecture-v1",
+  "source_study": "results/ral-evidence-v2",
+  "code_files": [
+    "followup/architecture.py"
+  ],
+  "training_seeds": [
+    30,
+    31,
+    32,
+    33,
+    34
+  ],
+  "methods": {
+    "full": {
+      "type": "architecture",
+      "variant": "full"
+    },
+    "state_only": {
+      "type": "architecture",
+      "variant": "state_only"
+    },
+    "image_only": {
+      "type": "architecture",
+      "variant": "image_only"
+    },
+    "no_text": {
+      "type": "architecture",
+      "variant": "no_text"
+    },
+    "no_future": {
+      "type": "architecture",
+      "variant": "no_future"
+    },
+    "no_latent": {
+      "type": "architecture",
+      "variant": "no_latent"
+    },
+    "detach_aux": {
+      "type": "architecture",
+      "variant": "detach_aux"
+    }
+  },
+  "evaluations": [
+    {
+      "name": "full_policy",
+      "method": "full",
+      "control": "policy"
+    },
+    {
+      "name": "full_restart",
+      "method": "full",
+      "control": "restart"
+    },
+    {
+      "name": "state_only_policy",
+      "method": "state_only",
+      "control": "policy"
+    },
+    {
+      "name": "state_only_restart",
+      "method": "state_only",
+      "control": "restart"
+    },
+    {
+      "name": "image_only_policy",
+      "method": "image_only",
+      "control": "policy"
+    },
+    {
+      "name": "image_only_restart",
+      "method": "image_only",
+      "control": "restart"
+    },
+    {
+      "name": "no_text_policy",
+      "method": "no_text",
+      "control": "policy"
+    },
+    {
+      "name": "no_text_restart",
+      "method": "no_text",
+      "control": "restart"
+    },
+    {
+      "name": "no_future_policy",
+      "method": "no_future",
+      "control": "policy"
+    },
+    {
+      "name": "no_future_restart",
+      "method": "no_future",
+      "control": "restart"
+    },
+    {
+      "name": "no_latent_policy",
+      "method": "no_latent",
+      "control": "policy"
+    },
+    {
+      "name": "no_latent_restart",
+      "method": "no_latent",
+      "control": "restart"
+    },
+    {
+      "name": "detach_aux_policy",
+      "method": "detach_aux",
+      "control": "policy"
+    },
+    {
+      "name": "detach_aux_restart",
+      "method": "detach_aux",
+      "control": "restart"
+    }
+  ],
+  "dev_episodes": 50,
+  "test_episodes": 200,
+  "dev_seed_start": 6100000,
+  "test_seed_start": 6200000,
+  "max_steps": 300,
+  "check_plans_every": 10,
+  "contrasts": [
+    [
+      "state_only_policy",
+      "full_policy",
+      "mean_max_coverage"
+    ],
+    [
+      "state_only_policy",
+      "full_policy",
+      "success_rate"
+    ],
+    [
+      "state_only_restart",
+      "full_restart",
+      "mean_max_coverage"
+    ],
+    [
+      "state_only_restart",
+      "full_restart",
+      "success_rate"
+    ],
+    [
+      "image_only_policy",
+      "full_policy",
+      "mean_max_coverage"
+    ],
+    [
+      "image_only_policy",
+      "full_policy",
+      "success_rate"
+    ],
+    [
+      "image_only_restart",
+      "full_restart",
+      "mean_max_coverage"
+    ],
+    [
+      "image_only_restart",
+      "full_restart",
+      "success_rate"
+    ],
+    [
+      "no_text_policy",
+      "full_policy",
+      "mean_max_coverage"
+    ],
+    [
+      "no_text_policy",
+      "full_policy",
+      "success_rate"
+    ],
+    [
+      "no_text_restart",
+      "full_restart",
+      "mean_max_coverage"
+    ],
+    [
+      "no_text_restart",
+      "full_restart",
+      "success_rate"
+    ],
+    [
+      "no_future_policy",
+      "full_policy",
+      "mean_max_coverage"
+    ],
+    [
+      "no_future_policy",
+      "full_policy",
+      "success_rate"
+    ],
+    [
+      "no_future_restart",
+      "full_restart",
+      "mean_max_coverage"
+    ],
+    [
+      "no_future_restart",
+      "full_restart",
+      "success_rate"
+    ],
+    [
+      "no_latent_policy",
+      "full_policy",
+      "mean_max_coverage"
+    ],
+    [
+      "no_latent_policy",
+      "full_policy",
+      "success_rate"
+    ],
+    [
+      "no_latent_restart",
+      "full_restart",
+      "mean_max_coverage"
+    ],
+    [
+      "no_latent_restart",
+      "full_restart",
+      "success_rate"
+    ],
+    [
+      "detach_aux_policy",
+      "full_policy",
+      "mean_max_coverage"
+    ],
+    [
+      "detach_aux_policy",
+      "full_policy",
+      "success_rate"
+    ],
+    [
+      "detach_aux_restart",
+      "full_restart",
+      "mean_max_coverage"
+    ],
+    [
+      "detach_aux_restart",
+      "full_restart",
+      "success_rate"
+    ]
+  ],
+  "primary": "detach_aux_policy minus full_policy, mean_max_coverage",
+  "hypothesis": "Does blocking auxiliary gradients improve reactive coverage? Two-sided paired contrast. Other contrasts descriptive and unadjusted.",
+  "reserved_seed_ranges": [
+    [
+      2000000,
+      5099999
+    ]
+  ],
+  "status": "New follow-up motivated by existing studies. Fixed five new training seeds; new control banks. Not a separate-encoder comparison. No final-bank tuning."
+}

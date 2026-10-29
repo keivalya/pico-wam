@@ -1,0 +1,151 @@
+{
+  "name": "ral-s3b-diffusion-policy",
+  "source_study": "results/ral-evidence-v2",
+  "code_files": [
+    "followup/baselines.py",
+    "followup/vendor/__init__.py",
+    "followup/vendor/diffusion_policy/__init__.py",
+    "followup/vendor/diffusion_policy/conditional_unet1d.py",
+    "followup/vendor/diffusion_policy/conv1d_components.py",
+    "followup/vendor/diffusion_policy/positional_embedding.py",
+    "followup/vendor/diffusion_policy/ema_model.py"
+  ],
+  "training_seeds": [
+    10,
+    11,
+    12,
+    13,
+    14
+  ],
+  "methods": {
+    "diffusion_policy": {
+      "type": "diffusion_policy",
+      "recipe": {
+        "horizon": 16,
+        "n_obs_steps": 2,
+        "n_action_steps": 8,
+        "diffusion_step_embed_dim": 256,
+        "down_dims": [
+          256,
+          512,
+          1024
+        ],
+        "kernel_size": 5,
+        "n_groups": 8,
+        "cond_predict_scale": true,
+        "num_train_timesteps": 100,
+        "beta_start": 0.0001,
+        "beta_end": 0.02,
+        "beta_schedule": "squaredcos_cap_v2",
+        "variance_type": "fixed_small",
+        "clip_sample": true,
+        "prediction_type": "epsilon",
+        "num_inference_steps": 100,
+        "ema_power": 0.75,
+        "lr": 0.0001,
+        "betas": [
+          0.95,
+          0.999
+        ],
+        "eps": 1e-08,
+        "weight_decay": 1e-06,
+        "lr_scheduler": "cosine",
+        "lr_warmup_steps": 500,
+        "batch_size": 256,
+        "num_epochs": 5000
+      },
+      "note": "Chi et al. state-based Push-T recipe, commit 5ba07ac; observation is this simulator's 8-D state; final EMA weights"
+    },
+    "v2_bc": {
+      "type": "frozen",
+      "policy_from": "bc",
+      "note": "frozen ral-evidence-v2 BC"
+    },
+    "v2_wam_branch": {
+      "type": "frozen",
+      "policy_from": "wam_branch",
+      "note": "frozen ral-evidence-v2 WAM trained with branches"
+    }
+  },
+  "evaluations": [
+    {
+      "name": "diffusion_policy",
+      "method": "diffusion_policy",
+      "control": "policy"
+    },
+    {
+      "name": "v2_bc_policy",
+      "method": "v2_bc",
+      "control": "policy"
+    },
+    {
+      "name": "v2_wam_branch_restart",
+      "method": "v2_wam_branch",
+      "control": "restart"
+    }
+  ],
+  "dev_episodes": 50,
+  "test_episodes": 200,
+  "dev_seed_start": 4200000,
+  "test_seed_start": 4500000,
+  "max_steps": 300,
+  "check_plans_every": 10,
+  "contrasts": [
+    [
+      "v2_wam_branch_restart",
+      "diffusion_policy",
+      "mean_max_coverage"
+    ],
+    [
+      "diffusion_policy",
+      "v2_bc_policy",
+      "mean_max_coverage"
+    ],
+    [
+      "v2_wam_branch_restart",
+      "diffusion_policy",
+      "success_rate"
+    ]
+  ],
+  "primary": "v2_wam_branch_restart minus diffusion_policy, mean_max_coverage",
+  "hypothesis": "Two-sided. The planner matched one-frame BC in coverage; whether it matches competent imitation baselines on identical data and starts is open.",
+  "reserved_seed_ranges": [
+    [
+      2000000,
+      2000749
+    ],
+    [
+      3000000,
+      3000999
+    ],
+    [
+      3100000,
+      3102999
+    ],
+    [
+      4000000,
+      4002999
+    ],
+    [
+      4100000,
+      4100749
+    ],
+    [
+      4250000,
+      4250099
+    ],
+    [
+      4300000,
+      4300749
+    ],
+    [
+      4400000,
+      4402999
+    ],
+    [
+      5000000,
+      5000049
+    ]
+  ],
+  "status": "Registered 2026-10-26 before any Diffusion Policy was trained. Five seeds because the full recipe measured 10.3 V100-hours per seed for training alone (profiling job 11374192, timing only). Seeds 10-14 share their dev and final starts with s3a-history-bc."
+}

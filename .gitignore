@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+.venv-*/
+.env
+.env.*
+.DS_Store
+*.npz
+*.pt
+*.pth
+*.parquet
+/outputs/
+/results/
+/checkpoints/
+/videos/
+/reproduction/generated/
+MUJOCO_LOG.txt

@@ -1,0 +1,237 @@
+"""Figures, tables and macros for the matched evidence study, from the bundled extract.
+
+Run: python analysis/matched_study.py [analysis/ral-evidence-v2.json]
+Requires numpy, scipy, matplotlib. Reads only the extract written by extract_evidence.py.
+Every interval is a paired Student-t interval over training runs; episodes are never
+treated as independent trained models.
+"""
+from pathlib import Path
+import json
+import os
+import sys
+
+import numpy as np
+from scipy.stats import t
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paper_style import use_style, save, WIDTH, BLUE, ORANGE, GRAY
+BASELINE=GRAY
+PALETTE={'blue':BLUE,'red':ORANGE}
+
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / 'analysis/ral-evidence-v2.json'
+# The five-seed registration's seed-count check, which led to the 15-seed study.
+V1_PRECISION = ROOT / 'analysis/ral-evidence-v1-dev-precision.json'
+# EVIDENCE_OUT redirects outputs, e.g. for software checks that must not touch the manuscript.
+OUT = Path(os.environ.get('EVIDENCE_OUT', ROOT / 'generated'))
+X = json.loads(SOURCE.read_text())
+C = X['config']
+SEEDS = C['training_seeds']
+N = len(SEEDS)
+METHODS = [('bc', 'policy'), ('current_demo', 'policy'), ('current_branch', 'policy'),
+           ('wam_demo', 'policy'), ('wam_demo', 'warm'), ('wam_demo', 'restart'),
+           ('wam_branch', 'policy'), ('wam_branch', 'warm'), ('wam_branch', 'restart')]
+NAMES = {'bc': 'BC', 'current_demo': 'Current, demos', 'current_branch': 'Current, + branches',
+         'wam_demo': 'WAM, demos', 'wam_branch': 'WAM, + branches'}
+SEARCH = {'policy': 'Reactive', 'warm': 'Warm search', 'restart': 'Restart search'}
+
+
+def per_run(condition, method, key, stage='test'):
+    """Per-training-run mean of an episode outcome, in percent."""
+    return np.array([100 * np.mean(X['runs'][f'{s}/{condition}'][f'{stage}/{method}'][key]) for s in SEEDS])
+
+
+def paired(v):
+    v = np.asarray(v, dtype=float)
+    radius = t.ppf(.975, len(v) - 1) * v.std(ddof=1) / np.sqrt(len(v))
+    return {'per_run': v.tolist(), 'mean': float(v.mean()), 'sample_sd': float(v.std(ddof=1)),
+            'ci95': [float(v.mean() - radius), float(v.mean() + radius)], 'runs_above_zero': int((v > 0).sum()),
+            'n_training_runs': len(v), 'method': 'paired run-level Student t interval'}
+
+
+def check_against_report():
+    """The extract must reproduce the study's own integrity-checked report exactly."""
+    effects = X['report']['effects']
+    cov = lambda c, m: per_run(c, m, 'max_coverage')
+    mine = {'interaction': (cov('wam_branch', 'restart') - cov('wam_branch', 'warm'))
+                           - (cov('wam_demo', 'restart') - cov('wam_demo', 'warm')),
+            'restart_branch_effect': cov('wam_branch', 'restart') - cov('wam_demo', 'restart'),
+            'future_vs_current_branch_policy': cov('wam_branch', 'policy') - cov('current_branch', 'policy'),
+            'current_branch_vs_demo_policy': cov('current_branch', 'policy') - cov('current_demo', 'policy'),
+            'restart_branch_vs_bc': cov('wam_branch', 'restart') - cov('bc', 'policy')}
+    for name, v in mine.items():
+        np.testing.assert_allclose(v, effects[f'mean_max_coverage/{name}']['per_run_percentage_points'], atol=1e-9)
+    return mine
+
+
+def stats():
+    contrasts = check_against_report()
+    out = {f'coverage/{k}': paired(v) for k, v in contrasts.items()}
+    for k in contrasts:
+        r = X['report']['effects'][f'success_rate/{k}']
+        out[f'success/{k}'] = paired(r['per_run_percentage_points'])
+    out['coverage/restart_minus_warm_demo'] = paired(per_run('wam_demo', 'restart', 'max_coverage') - per_run('wam_demo', 'warm', 'max_coverage'))
+    out['coverage/restart_minus_warm_branch'] = paired(per_run('wam_branch', 'restart', 'max_coverage') - per_run('wam_branch', 'warm', 'max_coverage'))
+    # Not predeclared: descriptive comparisons reported as post hoc in the text.
+    for condition in ['current_demo', 'current_branch', 'wam_demo', 'wam_branch']:
+        out[f'posthoc/{condition}_policy_minus_bc'] = paired(per_run(condition, 'policy', 'max_coverage') - per_run('bc', 'policy', 'max_coverage'))
+    out['posthoc/restart_minus_policy_branch'] = paired(per_run('wam_branch', 'restart', 'max_coverage') - per_run('wam_branch', 'policy', 'max_coverage'))
+    out['posthoc/restart_minus_policy_branch_success'] = paired(per_run('wam_branch', 'restart', 'success') - per_run('wam_branch', 'policy', 'success'))
+    out['posthoc/restart_minus_policy_demo'] = paired(per_run('wam_demo', 'restart', 'max_coverage') - per_run('wam_demo', 'policy', 'max_coverage'))
+    return out
+
+
+def macro_name(key):
+    words = key.replace('/', '_').split('_')
+    return 'Ev' + ''.join(w.capitalize() for w in words if w)
+
+
+def num(v):
+    """One decimal, with a true minus sign in text and math alike."""
+    return f'{v:.1f}'.replace('-', '\\ensuremath{-}')
+
+
+def write_macros(s, pred):
+    lines = ['% Generated by analysis/matched_study.py from ' + SOURCE.name + '. Do not edit.']
+    b = pred['block_rmse_px']
+    lines += [f'\\newcommand{{\\EvBlockRmseDemo}}{{{num(np.mean(b["demo"]))}}}', f'\\newcommand{{\\EvBlockRmseBranch}}{{{num(np.mean(b["branch"]))}}}',
+              f'\\newcommand{{\\EvBlockRmseDiff}}{{{num(b["branch_minus_demo"]["mean"])}}}',
+              f'\\newcommand{{\\EvBlockRmseDiffLow}}{{{num(b["branch_minus_demo"]["ci95"][0])}}}',
+              f'\\newcommand{{\\EvBlockRmseDiffHigh}}{{{num(b["branch_minus_demo"]["ci95"][1])}}}']
+    for key, v in pred['plan_checks'].items():
+        lines.append(f'\\newcommand{{\\{macro_name("plan_" + key)}}}{{{num(v)}}}')
+    for key, r in s.items():
+        name = macro_name(key)
+        lines += [f'\\newcommand{{\\{name}}}{{{num(r["mean"])}}}', f'\\newcommand{{\\{name}Low}}{{{num(r["ci95"][0])}}}',
+                  f'\\newcommand{{\\{name}High}}{{{num(r["ci95"][1])}}}', f'\\newcommand{{\\{name}Pos}}{{{r["runs_above_zero"]}}}']
+    for condition, method in METHODS:
+        name = macro_name(f'{condition}_{method}')
+        lines += [f'\\newcommand{{\\{name}Cov}}{{{per_run(condition, method, "max_coverage").mean():.1f}}}',
+                  f'\\newcommand{{\\{name}Succ}}{{{int(sum(np.sum(X["runs"][f"{s}/{condition}"][f"test/{method}"]["success"]) for s in SEEDS))}}}']
+    lines += [f'\\newcommand{{\\EvSeeds}}{{{N}}}', f'\\newcommand{{\\EvTestEpisodes}}{{{C["test_episodes"]}}}',
+              f'\\newcommand{{\\EvDevEpisodes}}{{{C["dev_episodes"]}}}', f'\\newcommand{{\\EvSteps}}{{{C["steps"]:,}}}'.replace(',', '{,}'),
+              f'\\newcommand{{\\EvTrainEpisodes}}{{{X["splits"]["train"]}}}', f'\\newcommand{{\\EvValEpisodes}}{{{X["splits"]["validation"]}}}',
+              f'\\newcommand{{\\EvTestDemoEpisodes}}{{{X["splits"]["test"]}}}',
+              f'\\newcommand{{\\EvDemoWindows}}{{{X["training_windows"]["demo"]:,}}}'.replace(',', '{,}'),
+              f'\\newcommand{{\\EvBranchWindows}}{{{X["training_windows"]["branch"]:,}}}'.replace(',', '{,}')]
+    if V1_PRECISION.exists():
+        p = json.loads(V1_PRECISION.read_text())['projected_test_half_width_pp']
+        lines += [f'\\newcommand{{\\EvVonePrecisionFive}}{{{p["5"]:.1f}}}', f'\\newcommand{{\\EvVonePrecisionFifteen}}{{{p["15"]:.1f}}}']
+    (OUT / 'evidence-statistics.tex').write_text('\n'.join(lines) + '\n')
+    (OUT / 'evidence-statistics.json').write_text(json.dumps(s, indent=2) + '\n')
+
+
+def table():
+    rows = ['\\begin{tabular}{llrr}', '\\toprule',
+            'Training & Control & Coverage, \\% & Success, \\% \\\\', '\\midrule']
+    for i, (condition, method) in enumerate(METHODS):
+        cov = per_run(condition, method, 'max_coverage')
+        succ = per_run(condition, method, 'success')
+        counts = [int(np.sum(X['runs'][f'{s}/{condition}'][f'test/{method}']['success'])) for s in SEEDS]
+        if i and condition != METHODS[i - 1][0]:
+            rows.append('\\addlinespace[2pt]')
+        name = NAMES[condition] if i == 0 or condition != METHODS[i - 1][0] else ''
+        rows.append(f'{name} & {SEARCH[method]} & {cov.mean():.1f} $\\pm$ {cov.std(ddof=1):.1f} & '
+                    f'{succ.mean():.1f} \\\\')
+    rows += ['\\bottomrule', '\\end{tabular}']
+    (OUT / 'table-evidence.tex').write_text('\n'.join(rows) + '\n')
+
+
+def prediction_table():
+    def curve(condition, part, key, k):
+        return np.array([X['runs'][f'{s}/{condition}'][f'test/prediction'][part][key][k] for s in SEEDS])
+    H, K = C['prediction_horizon'], C['counterfactual_horizon'] - 1
+    def block(condition, part, key):
+        v = np.array([np.asarray(X['runs'][f'{s}/{condition}']['test/prediction'][part][key])[K, 4:8].mean() for s in SEEDS])
+        return v
+    entries = [('Recorded actions, all states, step ' + str(H), lambda c: curve(c, 'factual', 'state_nmse', H),
+                lambda c: curve(c, 'factual', 'state_nmse_copy', H), 'Persistence'),
+               ('Random actions, all states, step ' + str(K + 1), lambda c: curve(c, 'counterfactual', 'wam_nmse', K),
+                lambda c: curve(c, 'counterfactual', 'noop_nmse', K), 'Zero action'),
+               ('Random actions, block, step ' + str(K + 1), lambda c: block(c, 'counterfactual', 'wam_nmse_per_dim'),
+                lambda c: block(c, 'counterfactual', 'noop_nmse_per_dim'), 'Zero action')]
+    rows = ['\\begin{tabular}{lrrr}', '\\toprule', 'nMSE & Demos & + branches & Reference \\\\', '\\midrule']
+    out = {}
+    for label, f, ref, ref_name in entries:
+        d, b, r = f('wam_demo'), f('wam_branch'), ref('wam_demo')
+        out[label] = {'demo': d.tolist(), 'branch': b.tolist(), 'reference': r.tolist(), 'reference_name': ref_name,
+                      'branch_minus_demo': paired(b - d)}
+        rows.append(f'{label} & {d.mean():.3f} & {b.mean():.3f} & {r.mean():.3f} \\\\')
+    rmse = lambda c: np.array([X['runs'][f'{s}/{c}']['test/prediction']['counterfactual']['block_position_rmse_px'][K] for s in SEEDS])
+    out['block_rmse_px'] = {'demo': rmse('wam_demo').tolist(), 'branch': rmse('wam_branch').tolist(),
+                            'branch_minus_demo': paired(rmse('wam_branch') - rmse('wam_demo'))}
+    rows += ['\\midrule', f'Block position RMSE, px, step {K + 1} & {rmse("wam_demo").mean():.1f} & {rmse("wam_branch").mean():.1f} & -- \\\\',
+             '\\bottomrule', '\\end{tabular}']
+    (OUT / 'table-evidence-prediction.tex').write_text('\n'.join(rows) + '\n')
+    plan = {}
+    for condition in ['wam_demo', 'wam_branch']:
+        for method in ['warm', 'restart']:
+            for key in ['plan_error_px', 'expected_gain_px', 'real_gain_px']:
+                plan[f'{condition}_{method}_{key}'] = float(np.mean([X['runs'][f'{s}/{condition}'][f'test/{method}']['plan_checks'][key] for s in SEEDS]))
+    out['plan_checks'] = plan
+    return out
+
+
+def plot(s):
+    use_style()
+    import matplotlib.pyplot as plt
+    # Independent subfigures keep panel b's long labels from narrowing panel a.
+    fig = plt.figure(figsize=(WIDTH, 4.55), layout='constrained')
+    top, bottom = fig.subfigures(2, 1, height_ratios=[1.0, 0.95])
+    a, b = top.subplots(), bottom.subplots()
+    colors = {'wam_demo': PALETTE['blue'], 'wam_branch': PALETTE['red']}
+    for k, condition in enumerate(['wam_demo', 'wam_branch']):
+        warm, restart = per_run(condition, 'warm', 'max_coverage'), per_run(condition, 'restart', 'max_coverage')
+        x = np.array([0, 1]) + (k - .5) * .08
+        for w, r in zip(warm, restart):
+            a.plot(x, [w, r], color=colors[condition], alpha=.35, linewidth=.6)
+        for xi, v in zip(x, [warm, restart]):
+            m = v.mean(); h = t.ppf(.975, N - 1) * v.std(ddof=1) / np.sqrt(N)
+            a.errorbar(xi, m, yerr=h, color=colors[condition], marker='o', markersize=3, capsize=1.5, linewidth=1)
+        a.plot(x, [warm.mean(), restart.mean()], color=colors[condition], linewidth=1.3)
+    bc = per_run('bc', 'policy', 'max_coverage').mean()
+    a.axhline(bc, color=BASELINE, linestyle='--', linewidth=.8)
+    a.set_xticks([0, 1], ['Warm search', 'Restart search'])
+    a.set_xlim(-.12, 1.12)
+    a.set_ylabel('Mean maximum coverage (%)')
+    a.grid(axis='x', visible=False)
+    order = [('coverage/interaction', 'Data × search interaction (primary)'),
+             ('coverage/restart_branch_effect', 'Restart: branches − demos'),
+             ('coverage/future_vs_current_branch_policy', 'Policy: WAM − Current'),
+             ('coverage/current_branch_vs_demo_policy', 'Current policy: branches − demos'),
+             ('coverage/restart_branch_vs_bc', 'Branch restart − BC')]
+    b.axvline(0, color=BASELINE, linewidth=.8, zorder=1)
+    for y, (key, label) in enumerate(reversed(order)):
+        r = s[key]
+        color = PALETTE['red'] if key.endswith('interaction') else '#4D4D4D'
+        b.plot(r['ci95'], [y, y], color=color, linewidth=1.0, solid_capstyle='round', zorder=2)
+        b.plot(r['per_run'], [y + .18] * N, '|', color=color, markersize=3, alpha=.6, zorder=2)
+        b.plot([r['mean']], [y], 'o', color=color, markersize=3.2, zorder=3)
+    b.set_yticks(range(len(order)), [label for _, label in reversed(order)], fontsize=8.5)
+    b.set_ylim(-.6, len(order) - .3)
+    b.set_xlabel('Coverage difference, points')
+    b.tick_params(axis='y', length=0)
+    b.grid(axis='x'); b.grid(axis='y', visible=False)
+    a.set_title('(a) Search initialization',loc='left')
+    b.set_title('(b) Paired coverage contrasts',loc='left')
+    top.legend(handles=[plt.Line2D([],[],color=BLUE,label='WAM, demos'),plt.Line2D([],[],color=ORANGE,label='WAM, + branches'),plt.Line2D([],[],color=GRAY,ls='--',label='BC policy')],loc='outside upper center',ncol=3)
+    save(fig, OUT / 'evidence.pdf')
+    fig.savefig(OUT / 'evidence.svg')
+    svg = OUT / 'evidence.svg'
+    svg.write_text('\n'.join(line.rstrip() for line in svg.read_text().splitlines()) + '\n')
+
+
+def main():
+    s = stats()
+    s_pred = prediction_table()
+    write_macros(s, s_pred)
+    table()
+    plot(s)
+    summary = {'source': SOURCE.name, 'protocol_sha256': X['protocol_sha256'], 'contrasts': s, 'prediction': s_pred,
+               'training_runs': N, 'note': 'Paired run-level Student t intervals; secondary intervals unadjusted.'}
+    (OUT / 'evidence-statistics.json').write_text(json.dumps(summary, indent=2) + '\n')
+    print(json.dumps({k: (round(v['mean'], 2), [round(x, 2) for x in v['ci95']]) for k, v in s.items()}, indent=1))
+
+
+if __name__ == '__main__':
+    main()

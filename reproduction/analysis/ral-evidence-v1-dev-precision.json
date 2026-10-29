@@ -1,0 +1,30 @@
+{
+  "between_run_variance_pp2": 95.60970652954138,
+  "mean_episode_variance_pp2": 2874.196854782638,
+  "projected_test_half_width_pp": {
+    "5": 13.021538838795301,
+    "6": 11.005607767874581,
+    "7": 9.69901265482436,
+    "8": 8.767491782636212,
+    "9": 8.06115085681333,
+    "10": 7.502067989547037,
+    "11": 7.045375267895629,
+    "12": 6.663228596897293,
+    "13": 6.337332143322259,
+    "14": 6.055110478874016,
+    "15": 5.807600012665811
+  },
+  "target_pp": 5.0,
+  "current_seeds": 5,
+  "seeds_needed": null,
+  "decision": "register a new study with 15 seeds before any test evaluation",
+  "development_per_run_interaction_pp": [
+    -2.707475317710213,
+    21.032409258660522,
+    -7.281209084408711,
+    0.6193811338377005,
+    -10.467481901280484
+  ],
+  "rule": "Before freeze, run dev-precision. It splits the development-bank primary interaction into between-run and episode-sampling variance and projects the test-bank 95% half-width. It uses variance only, never the effect estimate. If the projection with the current seeds exceeds precision_target_pp, register a new study with the smallest seed count up to max_training_seeds that meets it, within the approved budget, plus a new test bank; this study's test bank then stays unopened.",
+  "note": "Variance components only drive the decision; development effects are recorded for transparency."
+}

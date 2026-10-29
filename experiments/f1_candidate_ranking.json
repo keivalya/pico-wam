@@ -1,0 +1,26 @@
+{
+  "name": "ral-f1-candidate-ranking",
+  "source_study": "results/ral-evidence-v2",
+  "conditions": ["wam_demo", "wam_branch"],
+  "demo_state_stride": 5,
+  "expert_episodes": 50,
+  "expert_seed_start": 5000000,
+  "expert_noise": 0.2,
+  "expert_state_stride": 10,
+  "max_steps": 300,
+  "candidates": 256,
+  "uniform_candidates": 128,
+  "uniform_scale": 0.4,
+  "trajectory_noise": 0.1,
+  "candidate_seed": 20261025,
+  "elites": 32,
+  "primary": "Mean selected-sequence regret on the common candidates over all bank states: true planner cost of each model's lowest-predicted-cost sequence minus the lowest true cost in the bank, wam_branch minus wam_demo, paired over training runs with a Student-t 95% interval. Hypothesis: lower regret with branches.",
+  "secondary": [
+    "common-candidate Spearman correlation between predicted and true cost",
+    "common-candidate overlap of predicted and true top-32 elites",
+    "optimism of the selected sequence: true minus predicted cost",
+    "the same metrics on each model's own restart-planner candidates, plus the true-cost gain of the selected sequence over the policy prior",
+    "all of the above separately for demonstration and noisy-expert states"
+  ],
+  "status": "Registered before any checkpoint was scored on this bank. Uses frozen ral-evidence-v2 checkpoints; no training or tuning."
+}

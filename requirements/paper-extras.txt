@@ -1,0 +1,6 @@
+-r ../requirements.txt
+# Optional imitation baseline and door mechanism study.
+diffusers==0.42.0
+einops==0.8.2
+mujoco==3.6.0
+metaworld @ git+https://github.com/Farama-Foundation/Metaworld.git@cdafedfaaa896472fb7e76e2fe103e120b67a9b6

@@ -1,0 +1,2303 @@
+{
+  "sources": {
+    "demonstrations": {
+      "repository": "lerobot/pusht",
+      "revision": "7628202a2180972f291ba1bc6723834921e72c19",
+      "parquet_sha256": "9abc0431f12d10c33b5b37b1bf1e6e557c8ae1c8c29fb86658969e48fcbbbf01"
+    },
+    "keypoints": {
+      "repository": "lerobot/pusht_keypoints",
+      "revision": "ace8c161a68bc025c21a5f29f85b86a9a2c5e64b",
+      "parquet_sha256": "8b4d978eeeb99254ddead01e79ee70d95a0416e27438ca9438c89a1682598ae0"
+    }
+  },
+  "conversion_code_sha256": "14c87182d6677cd403142ae8be2e69150795aa097b64631f1dc9c1022346e7c9",
+  "frames": 25650,
+  "episodes": [
+    {
+      "episode": 0,
+      "frames": 161,
+      "max_coverage": 0.829593855904527,
+      "max_source_reward": 0.8732566833496094,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        159,
+        160
+      ]
+    },
+    {
+      "episode": 1,
+      "frames": 118,
+      "max_coverage": 0.8551445292286198,
+      "max_source_reward": 0.9001520872116089,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        116,
+        117
+      ]
+    },
+    {
+      "episode": 2,
+      "frames": 141,
+      "max_coverage": 0.8626819932778456,
+      "max_source_reward": 0.9080862998962402,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        139,
+        140
+      ]
+    },
+    {
+      "episode": 3,
+      "frames": 159,
+      "max_coverage": 0.8743307362218681,
+      "max_source_reward": 0.9203482270240784,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        157,
+        158
+      ]
+    },
+    {
+      "episode": 4,
+      "frames": 159,
+      "max_coverage": 0.8635079243757863,
+      "max_source_reward": 0.9089557528495789,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        157,
+        158
+      ]
+    },
+    {
+      "episode": 5,
+      "frames": 157,
+      "max_coverage": 0.8748988761185504,
+      "max_source_reward": 0.9209461808204651,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        155,
+        156
+      ]
+    },
+    {
+      "episode": 6,
+      "frames": 69,
+      "max_coverage": 0.8455488003475087,
+      "max_source_reward": 0.8900514841079712,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        67,
+        68
+      ]
+    },
+    {
+      "episode": 7,
+      "frames": 169,
+      "max_coverage": 0.8535757677276972,
+      "max_source_reward": 0.8985008597373962,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        167,
+        168
+      ]
+    },
+    {
+      "episode": 8,
+      "frames": 80,
+      "max_coverage": 0.8308875254179916,
+      "max_source_reward": 0.8746184706687927,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        78,
+        79
+      ]
+    },
+    {
+      "episode": 9,
+      "frames": 134,
+      "max_coverage": 0.8663354805024135,
+      "max_source_reward": 0.9119321703910828,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        132,
+        133
+      ]
+    },
+    {
+      "episode": 10,
+      "frames": 188,
+      "max_coverage": 0.8733220060208872,
+      "max_source_reward": 0.9192864298820496,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        186,
+        187
+      ]
+    },
+    {
+      "episode": 11,
+      "frames": 149,
+      "max_coverage": 0.8628645686882974,
+      "max_source_reward": 0.9082784652709961,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        147,
+        148
+      ]
+    },
+    {
+      "episode": 12,
+      "frames": 140,
+      "max_coverage": 0.8545779494619499,
+      "max_source_reward": 0.8995557427406311,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        138,
+        139
+      ]
+    },
+    {
+      "episode": 13,
+      "frames": 125,
+      "max_coverage": 0.8636777530061769,
+      "max_source_reward": 0.9091343879699707,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        123,
+        124
+      ]
+    },
+    {
+      "episode": 14,
+      "frames": 107,
+      "max_coverage": 0.833980638240986,
+      "max_source_reward": 0.8778743743896484,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        105,
+        106
+      ]
+    },
+    {
+      "episode": 15,
+      "frames": 153,
+      "max_coverage": 0.7970696868954664,
+      "max_source_reward": 0.8390209078788757,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        151,
+        152
+      ]
+    },
+    {
+      "episode": 16,
+      "frames": 126,
+      "max_coverage": 0.8411948834298065,
+      "max_source_reward": 0.8854683637619019,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        124,
+        125
+      ]
+    },
+    {
+      "episode": 17,
+      "frames": 102,
+      "max_coverage": 0.8269469973683798,
+      "max_source_reward": 0.870470404624939,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        100,
+        101
+      ]
+    },
+    {
+      "episode": 18,
+      "frames": 86,
+      "max_coverage": 0.859686874616547,
+      "max_source_reward": 0.9049335718154907,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        84,
+        85
+      ]
+    },
+    {
+      "episode": 19,
+      "frames": 75,
+      "max_coverage": 0.8359254152047085,
+      "max_source_reward": 0.8799214363098145,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        73,
+        74
+      ]
+    },
+    {
+      "episode": 20,
+      "frames": 142,
+      "max_coverage": 0.8666135542509045,
+      "max_source_reward": 0.9122248888015747,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        140,
+        141
+      ]
+    },
+    {
+      "episode": 21,
+      "frames": 115,
+      "max_coverage": 0.8749514540838607,
+      "max_source_reward": 0.9210014939308167,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        113,
+        114
+      ]
+    },
+    {
+      "episode": 22,
+      "frames": 109,
+      "max_coverage": 0.8752385067592499,
+      "max_source_reward": 0.9213036894798279,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        107,
+        108
+      ]
+    },
+    {
+      "episode": 23,
+      "frames": 110,
+      "max_coverage": 0.8431294233468962,
+      "max_source_reward": 0.887504518032074,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        108,
+        109
+      ]
+    },
+    {
+      "episode": 24,
+      "frames": 98,
+      "max_coverage": 0.8347324990992604,
+      "max_source_reward": 0.8786658048629761,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        96,
+        97
+      ]
+    },
+    {
+      "episode": 25,
+      "frames": 133,
+      "max_coverage": 0.870427695377388,
+      "max_source_reward": 0.9162396192550659,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        131,
+        132
+      ]
+    },
+    {
+      "episode": 26,
+      "frames": 158,
+      "max_coverage": 0.8856563263921468,
+      "max_source_reward": 0.932269811630249,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        156,
+        157
+      ]
+    },
+    {
+      "episode": 27,
+      "frames": 112,
+      "max_coverage": 0.819889978782139,
+      "max_source_reward": 0.8630420565605164,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        110,
+        111
+      ]
+    },
+    {
+      "episode": 28,
+      "frames": 107,
+      "max_coverage": 0.8469568182825455,
+      "max_source_reward": 0.8915334343910217,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        105,
+        106
+      ]
+    },
+    {
+      "episode": 29,
+      "frames": 115,
+      "max_coverage": 0.8210779166941061,
+      "max_source_reward": 0.8642925024032593,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        113,
+        114
+      ]
+    },
+    {
+      "episode": 30,
+      "frames": 84,
+      "max_coverage": 0.841886234524122,
+      "max_source_reward": 0.8861961960792542,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        82,
+        83
+      ]
+    },
+    {
+      "episode": 31,
+      "frames": 95,
+      "max_coverage": 0.8919446322705392,
+      "max_source_reward": 0.9388890862464905,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        93,
+        94
+      ]
+    },
+    {
+      "episode": 32,
+      "frames": 148,
+      "max_coverage": 0.9014354803987445,
+      "max_source_reward": 0.9488797187805176,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        146,
+        147
+      ]
+    },
+    {
+      "episode": 33,
+      "frames": 120,
+      "max_coverage": 0.8655498891215081,
+      "max_source_reward": 0.9111051559448242,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        118,
+        119
+      ]
+    },
+    {
+      "episode": 34,
+      "frames": 142,
+      "max_coverage": 0.8554093794354828,
+      "max_source_reward": 0.9004308581352234,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        140,
+        141
+      ]
+    },
+    {
+      "episode": 35,
+      "frames": 143,
+      "max_coverage": 0.8518939423239706,
+      "max_source_reward": 0.896730363368988,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        141,
+        142
+      ]
+    },
+    {
+      "episode": 36,
+      "frames": 142,
+      "max_coverage": 0.8612928821034508,
+      "max_source_reward": 0.9066240787506104,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        140,
+        141
+      ]
+    },
+    {
+      "episode": 37,
+      "frames": 121,
+      "max_coverage": 0.8313699217013888,
+      "max_source_reward": 0.8751262426376343,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        119,
+        120
+      ]
+    },
+    {
+      "episode": 38,
+      "frames": 186,
+      "max_coverage": 0.8588776906224389,
+      "max_source_reward": 0.9040818214416504,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        184,
+        185
+      ]
+    },
+    {
+      "episode": 39,
+      "frames": 99,
+      "max_coverage": 0.838339860593306,
+      "max_source_reward": 0.8824629187583923,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        97,
+        98
+      ]
+    },
+    {
+      "episode": 40,
+      "frames": 139,
+      "max_coverage": 0.870044890681163,
+      "max_source_reward": 0.915836751461029,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        137,
+        138
+      ]
+    },
+    {
+      "episode": 41,
+      "frames": 73,
+      "max_coverage": 0.8351280708596437,
+      "max_source_reward": 0.8790822625160217,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        71,
+        72
+      ]
+    },
+    {
+      "episode": 42,
+      "frames": 136,
+      "max_coverage": 0.7820614517601724,
+      "max_source_reward": 0.8232226371765137,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        134,
+        135
+      ]
+    },
+    {
+      "episode": 43,
+      "frames": 118,
+      "max_coverage": 0.8877301431939053,
+      "max_source_reward": 0.9344527125358582,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        116,
+        117
+      ]
+    },
+    {
+      "episode": 44,
+      "frames": 127,
+      "max_coverage": 0.8656634314830202,
+      "max_source_reward": 0.9112247228622437,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        125,
+        126
+      ]
+    },
+    {
+      "episode": 45,
+      "frames": 152,
+      "max_coverage": 0.7900066893976916,
+      "max_source_reward": 0.8315860033035278,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        150,
+        151
+      ]
+    },
+    {
+      "episode": 46,
+      "frames": 83,
+      "max_coverage": 0.8615701319596505,
+      "max_source_reward": 0.9069159626960754,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        81,
+        82
+      ]
+    },
+    {
+      "episode": 47,
+      "frames": 109,
+      "max_coverage": 0.8548109054293817,
+      "max_source_reward": 0.8998009562492371,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        107,
+        108
+      ]
+    },
+    {
+      "episode": 48,
+      "frames": 138,
+      "max_coverage": 0.8382460699181418,
+      "max_source_reward": 0.8823642134666443,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        136,
+        137
+      ]
+    },
+    {
+      "episode": 49,
+      "frames": 83,
+      "max_coverage": 0.7962198452313803,
+      "max_source_reward": 0.8381261229515076,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        81,
+        82
+      ]
+    },
+    {
+      "episode": 50,
+      "frames": 69,
+      "max_coverage": 0.8674347455045559,
+      "max_source_reward": 0.9130892157554626,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        67,
+        68
+      ]
+    },
+    {
+      "episode": 51,
+      "frames": 73,
+      "max_coverage": 0.8732867172121792,
+      "max_source_reward": 0.9192491173744202,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        71,
+        72
+      ]
+    },
+    {
+      "episode": 52,
+      "frames": 136,
+      "max_coverage": 0.8723107121224027,
+      "max_source_reward": 0.9182217717170715,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        134,
+        135
+      ]
+    },
+    {
+      "episode": 53,
+      "frames": 173,
+      "max_coverage": 0.7823800716614573,
+      "max_source_reward": 0.8235581517219543,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        171,
+        172
+      ]
+    },
+    {
+      "episode": 54,
+      "frames": 205,
+      "max_coverage": 0.8665407384986992,
+      "max_source_reward": 0.912148118019104,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        203,
+        204
+      ]
+    },
+    {
+      "episode": 55,
+      "frames": 106,
+      "max_coverage": 0.8482465559683139,
+      "max_source_reward": 0.8928910493850708,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        104,
+        105
+      ]
+    },
+    {
+      "episode": 56,
+      "frames": 105,
+      "max_coverage": 0.8042076878813267,
+      "max_source_reward": 0.8465344309806824,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        103,
+        104
+      ]
+    },
+    {
+      "episode": 57,
+      "frames": 83,
+      "max_coverage": 0.8905496975430911,
+      "max_source_reward": 0.937420666217804,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        81,
+        82
+      ]
+    },
+    {
+      "episode": 58,
+      "frames": 118,
+      "max_coverage": 0.8740641272090406,
+      "max_source_reward": 0.9200676083564758,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        116,
+        117
+      ]
+    },
+    {
+      "episode": 59,
+      "frames": 122,
+      "max_coverage": 0.8566534545335739,
+      "max_source_reward": 0.9017404913902283,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        120,
+        121
+      ]
+    },
+    {
+      "episode": 60,
+      "frames": 60,
+      "max_coverage": 0.825926214498417,
+      "max_source_reward": 0.8693960905075073,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        58,
+        59
+      ]
+    },
+    {
+      "episode": 61,
+      "frames": 150,
+      "max_coverage": 0.7998914800641878,
+      "max_source_reward": 0.8419910073280334,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        148,
+        149
+      ]
+    },
+    {
+      "episode": 62,
+      "frames": 67,
+      "max_coverage": 0.8484679518351312,
+      "max_source_reward": 0.8931241631507874,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        65,
+        66
+      ]
+    },
+    {
+      "episode": 63,
+      "frames": 140,
+      "max_coverage": 0.8224759271481982,
+      "max_source_reward": 0.8657642602920532,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        138,
+        139
+      ]
+    },
+    {
+      "episode": 64,
+      "frames": 103,
+      "max_coverage": 0.8191735026062215,
+      "max_source_reward": 0.8622879385948181,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        101,
+        102
+      ]
+    },
+    {
+      "episode": 65,
+      "frames": 166,
+      "max_coverage": 0.8694924384739832,
+      "max_source_reward": 0.9152553677558899,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        164,
+        165
+      ]
+    },
+    {
+      "episode": 66,
+      "frames": 67,
+      "max_coverage": 0.854479155539584,
+      "max_source_reward": 0.8994517922401428,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        65,
+        66
+      ]
+    },
+    {
+      "episode": 67,
+      "frames": 104,
+      "max_coverage": 0.8245686364240851,
+      "max_source_reward": 0.8679669499397278,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        102,
+        103
+      ]
+    },
+    {
+      "episode": 68,
+      "frames": 90,
+      "max_coverage": 0.8478331107688728,
+      "max_source_reward": 0.8924559354782104,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        88,
+        89
+      ]
+    },
+    {
+      "episode": 69,
+      "frames": 150,
+      "max_coverage": 0.8639796942354934,
+      "max_source_reward": 0.9094524383544922,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        148,
+        149
+      ]
+    },
+    {
+      "episode": 70,
+      "frames": 186,
+      "max_coverage": 0.8791860814381826,
+      "max_source_reward": 0.925459086894989,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        184,
+        185
+      ]
+    },
+    {
+      "episode": 71,
+      "frames": 134,
+      "max_coverage": 0.8390572139332468,
+      "max_source_reward": 0.8832181692123413,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        132,
+        133
+      ]
+    },
+    {
+      "episode": 72,
+      "frames": 148,
+      "max_coverage": 0.808511369583439,
+      "max_source_reward": 0.8510646820068359,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        146,
+        147
+      ]
+    },
+    {
+      "episode": 73,
+      "frames": 112,
+      "max_coverage": 0.8414180419821174,
+      "max_source_reward": 0.8857032656669617,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        110,
+        111
+      ]
+    },
+    {
+      "episode": 74,
+      "frames": 118,
+      "max_coverage": 0.8590026204683079,
+      "max_source_reward": 0.9042132496833801,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        116,
+        117
+      ]
+    },
+    {
+      "episode": 75,
+      "frames": 98,
+      "max_coverage": 0.8607192048015159,
+      "max_source_reward": 0.9060201048851013,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        96,
+        97
+      ]
+    },
+    {
+      "episode": 76,
+      "frames": 89,
+      "max_coverage": 0.8635979815705085,
+      "max_source_reward": 0.9090504050254822,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        87,
+        88
+      ]
+    },
+    {
+      "episode": 77,
+      "frames": 122,
+      "max_coverage": 0.8228782065626694,
+      "max_source_reward": 0.866187572479248,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        120,
+        121
+      ]
+    },
+    {
+      "episode": 78,
+      "frames": 176,
+      "max_coverage": 0.8704293373139461,
+      "max_source_reward": 0.9162414073944092,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        174,
+        175
+      ]
+    },
+    {
+      "episode": 79,
+      "frames": 70,
+      "max_coverage": 0.8643687504047661,
+      "max_source_reward": 0.9098619222640991,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        68,
+        69
+      ]
+    },
+    {
+      "episode": 80,
+      "frames": 117,
+      "max_coverage": 0.8705088320866367,
+      "max_source_reward": 0.9163249731063843,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        115,
+        116
+      ]
+    },
+    {
+      "episode": 81,
+      "frames": 113,
+      "max_coverage": 0.8328317494246862,
+      "max_source_reward": 0.8766649961471558,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        111,
+        112
+      ]
+    },
+    {
+      "episode": 82,
+      "frames": 94,
+      "max_coverage": 0.8556129282338029,
+      "max_source_reward": 0.9006452560424805,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        92,
+        93
+      ]
+    },
+    {
+      "episode": 83,
+      "frames": 139,
+      "max_coverage": 0.8747806084131806,
+      "max_source_reward": 0.9208216071128845,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        137,
+        138
+      ]
+    },
+    {
+      "episode": 84,
+      "frames": 80,
+      "max_coverage": 0.8562918601001175,
+      "max_source_reward": 0.9013597965240479,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        78,
+        79
+      ]
+    },
+    {
+      "episode": 85,
+      "frames": 111,
+      "max_coverage": 0.8597568229013465,
+      "max_source_reward": 0.9050071835517883,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        109,
+        110
+      ]
+    },
+    {
+      "episode": 86,
+      "frames": 104,
+      "max_coverage": 0.8338668436056377,
+      "max_source_reward": 0.8777544498443604,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        102,
+        103
+      ]
+    },
+    {
+      "episode": 87,
+      "frames": 115,
+      "max_coverage": 0.8381008753668363,
+      "max_source_reward": 0.8822113871574402,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        113,
+        114
+      ]
+    },
+    {
+      "episode": 88,
+      "frames": 81,
+      "max_coverage": 0.8191839873690333,
+      "max_source_reward": 0.8622989058494568,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        79,
+        80
+      ]
+    },
+    {
+      "episode": 89,
+      "frames": 138,
+      "max_coverage": 0.8312160303494648,
+      "max_source_reward": 0.8749641180038452,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        136,
+        137
+      ]
+    },
+    {
+      "episode": 90,
+      "frames": 109,
+      "max_coverage": 0.8402855004868742,
+      "max_source_reward": 0.8845112323760986,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        107,
+        108
+      ]
+    },
+    {
+      "episode": 91,
+      "frames": 101,
+      "max_coverage": 0.8314788337555065,
+      "max_source_reward": 0.8752408623695374,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        99,
+        100
+      ]
+    },
+    {
+      "episode": 92,
+      "frames": 78,
+      "max_coverage": 0.8282975561797364,
+      "max_source_reward": 0.8718920350074768,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        76,
+        77
+      ]
+    },
+    {
+      "episode": 93,
+      "frames": 64,
+      "max_coverage": 0.8498888625702724,
+      "max_source_reward": 0.8946199417114258,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        62,
+        63
+      ]
+    },
+    {
+      "episode": 94,
+      "frames": 67,
+      "max_coverage": 0.8838728711870799,
+      "max_source_reward": 0.9303925037384033,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        65,
+        66
+      ]
+    },
+    {
+      "episode": 95,
+      "frames": 107,
+      "max_coverage": 0.7724941652665623,
+      "max_source_reward": 0.8131517767906189,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        105,
+        106
+      ]
+    },
+    {
+      "episode": 96,
+      "frames": 190,
+      "max_coverage": 0.8554296031553623,
+      "max_source_reward": 0.9004523754119873,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        188,
+        189
+      ]
+    },
+    {
+      "episode": 97,
+      "frames": 111,
+      "max_coverage": 0.8211250836009969,
+      "max_source_reward": 0.8643423318862915,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        109,
+        110
+      ]
+    },
+    {
+      "episode": 98,
+      "frames": 68,
+      "max_coverage": 0.859472260338373,
+      "max_source_reward": 0.904707670211792,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        66,
+        67
+      ]
+    },
+    {
+      "episode": 99,
+      "frames": 82,
+      "max_coverage": 0.8237626460270997,
+      "max_source_reward": 0.8671185970306396,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        80,
+        81
+      ]
+    },
+    {
+      "episode": 100,
+      "frames": 117,
+      "max_coverage": 0.8472977195792492,
+      "max_source_reward": 0.8918924331665039,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        115,
+        116
+      ]
+    },
+    {
+      "episode": 101,
+      "frames": 92,
+      "max_coverage": 0.811067928789578,
+      "max_source_reward": 0.8537557721138,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        90,
+        91
+      ]
+    },
+    {
+      "episode": 102,
+      "frames": 114,
+      "max_coverage": 0.84605495134527,
+      "max_source_reward": 0.8905841708183289,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        112,
+        113
+      ]
+    },
+    {
+      "episode": 103,
+      "frames": 141,
+      "max_coverage": 0.8742503857836501,
+      "max_source_reward": 0.920263409614563,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        139,
+        140
+      ]
+    },
+    {
+      "episode": 104,
+      "frames": 137,
+      "max_coverage": 0.8215518892393563,
+      "max_source_reward": 0.8647916316986084,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        135,
+        136
+      ]
+    },
+    {
+      "episode": 105,
+      "frames": 75,
+      "max_coverage": 0.8131978153533695,
+      "max_source_reward": 0.8559978008270264,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        73,
+        74
+      ]
+    },
+    {
+      "episode": 106,
+      "frames": 126,
+      "max_coverage": 0.8163191847710839,
+      "max_source_reward": 0.8592833876609802,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        124,
+        125
+      ]
+    },
+    {
+      "episode": 107,
+      "frames": 197,
+      "max_coverage": 0.8166973094992055,
+      "max_source_reward": 0.8596813678741455,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        195,
+        196
+      ]
+    },
+    {
+      "episode": 108,
+      "frames": 112,
+      "max_coverage": 0.8587135535834236,
+      "max_source_reward": 0.9039090275764465,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        110,
+        111
+      ]
+    },
+    {
+      "episode": 109,
+      "frames": 145,
+      "max_coverage": 0.8561591845837265,
+      "max_source_reward": 0.9012201428413391,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        143,
+        144
+      ]
+    },
+    {
+      "episode": 110,
+      "frames": 131,
+      "max_coverage": 0.858998867545791,
+      "max_source_reward": 0.904209315776825,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        129,
+        130
+      ]
+    },
+    {
+      "episode": 111,
+      "frames": 98,
+      "max_coverage": 0.8677832912979786,
+      "max_source_reward": 0.9134561419487,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        96,
+        97
+      ]
+    },
+    {
+      "episode": 112,
+      "frames": 71,
+      "max_coverage": 0.88039862628002,
+      "max_source_reward": 0.9267355799674988,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        69,
+        70
+      ]
+    },
+    {
+      "episode": 113,
+      "frames": 149,
+      "max_coverage": 0.796045102992126,
+      "max_source_reward": 0.8379422426223755,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        147,
+        148
+      ]
+    },
+    {
+      "episode": 114,
+      "frames": 165,
+      "max_coverage": 0.850262574207295,
+      "max_source_reward": 0.895013153553009,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        163,
+        164
+      ]
+    },
+    {
+      "episode": 115,
+      "frames": 97,
+      "max_coverage": 0.8587853506038294,
+      "max_source_reward": 0.9039844870567322,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        95,
+        96
+      ]
+    },
+    {
+      "episode": 116,
+      "frames": 178,
+      "max_coverage": 0.8655942280450951,
+      "max_source_reward": 0.9111519455909729,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        176,
+        177
+      ]
+    },
+    {
+      "episode": 117,
+      "frames": 116,
+      "max_coverage": 0.8590276449592068,
+      "max_source_reward": 0.90423983335495,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        114,
+        115
+      ]
+    },
+    {
+      "episode": 118,
+      "frames": 102,
+      "max_coverage": 0.8421826055638644,
+      "max_source_reward": 0.886508047580719,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        100,
+        101
+      ]
+    },
+    {
+      "episode": 119,
+      "frames": 121,
+      "max_coverage": 0.8435280584036382,
+      "max_source_reward": 0.887924313545227,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        119,
+        120
+      ]
+    },
+    {
+      "episode": 120,
+      "frames": 65,
+      "max_coverage": 0.8934396539512807,
+      "max_source_reward": 0.9404627084732056,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        63,
+        64
+      ]
+    },
+    {
+      "episode": 121,
+      "frames": 137,
+      "max_coverage": 0.8713560339143788,
+      "max_source_reward": 0.917216956615448,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        135,
+        136
+      ]
+    },
+    {
+      "episode": 122,
+      "frames": 119,
+      "max_coverage": 0.8602707727275404,
+      "max_source_reward": 0.9055482745170593,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        117,
+        118
+      ]
+    },
+    {
+      "episode": 123,
+      "frames": 205,
+      "max_coverage": 0.8403508148190384,
+      "max_source_reward": 0.8845798969268799,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        203,
+        204
+      ]
+    },
+    {
+      "episode": 124,
+      "frames": 148,
+      "max_coverage": 0.9010529968707286,
+      "max_source_reward": 0.9484768509864807,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        146,
+        147
+      ]
+    },
+    {
+      "episode": 125,
+      "frames": 159,
+      "max_coverage": 0.8170024207381865,
+      "max_source_reward": 0.8600023984909058,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        157,
+        158
+      ]
+    },
+    {
+      "episode": 126,
+      "frames": 171,
+      "max_coverage": 0.8417629936422611,
+      "max_source_reward": 0.8860663175582886,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        169,
+        170
+      ]
+    },
+    {
+      "episode": 127,
+      "frames": 141,
+      "max_coverage": 0.8457696262151622,
+      "max_source_reward": 0.8902837634086609,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        139,
+        140
+      ]
+    },
+    {
+      "episode": 128,
+      "frames": 96,
+      "max_coverage": 0.8057182298343613,
+      "max_source_reward": 0.8481245636940002,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        94,
+        95
+      ]
+    },
+    {
+      "episode": 129,
+      "frames": 156,
+      "max_coverage": 0.8472508887996267,
+      "max_source_reward": 0.8918431401252747,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        154,
+        155
+      ]
+    },
+    {
+      "episode": 130,
+      "frames": 152,
+      "max_coverage": 0.8626599740931401,
+      "max_source_reward": 0.9080630540847778,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        150,
+        151
+      ]
+    },
+    {
+      "episode": 131,
+      "frames": 183,
+      "max_coverage": 0.8820007247895456,
+      "max_source_reward": 0.928421676158905,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        181,
+        182
+      ]
+    },
+    {
+      "episode": 132,
+      "frames": 155,
+      "max_coverage": 0.8221430572180659,
+      "max_source_reward": 0.8654138445854187,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        153,
+        154
+      ]
+    },
+    {
+      "episode": 133,
+      "frames": 131,
+      "max_coverage": 0.871922132956903,
+      "max_source_reward": 0.917812705039978,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        129,
+        130
+      ]
+    },
+    {
+      "episode": 134,
+      "frames": 123,
+      "max_coverage": 0.8762969008273499,
+      "max_source_reward": 0.922417938709259,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        121,
+        122
+      ]
+    },
+    {
+      "episode": 135,
+      "frames": 103,
+      "max_coverage": 0.8233034749258848,
+      "max_source_reward": 0.866635262966156,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        101,
+        102
+      ]
+    },
+    {
+      "episode": 136,
+      "frames": 125,
+      "max_coverage": 0.8638712917125853,
+      "max_source_reward": 0.9093380570411682,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        123,
+        124
+      ]
+    },
+    {
+      "episode": 137,
+      "frames": 92,
+      "max_coverage": 0.8427715524859262,
+      "max_source_reward": 0.8871278762817383,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        90,
+        91
+      ]
+    },
+    {
+      "episode": 138,
+      "frames": 186,
+      "max_coverage": 0.8802290499172384,
+      "max_source_reward": 0.9265567660331726,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        184,
+        185
+      ]
+    },
+    {
+      "episode": 139,
+      "frames": 105,
+      "max_coverage": 0.8452916200896069,
+      "max_source_reward": 0.8897807002067566,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        103,
+        104
+      ]
+    },
+    {
+      "episode": 140,
+      "frames": 112,
+      "max_coverage": 0.8568848155855108,
+      "max_source_reward": 0.9019839763641357,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        110,
+        111
+      ]
+    },
+    {
+      "episode": 141,
+      "frames": 186,
+      "max_coverage": 0.7991129523073577,
+      "max_source_reward": 0.8411714434623718,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        184,
+        185
+      ]
+    },
+    {
+      "episode": 142,
+      "frames": 122,
+      "max_coverage": 0.8029530852740642,
+      "max_source_reward": 0.845213770866394,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        120,
+        121
+      ]
+    },
+    {
+      "episode": 143,
+      "frames": 146,
+      "max_coverage": 0.8857432383713072,
+      "max_source_reward": 0.9323612451553345,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        144,
+        145
+      ]
+    },
+    {
+      "episode": 144,
+      "frames": 133,
+      "max_coverage": 0.8297071804458808,
+      "max_source_reward": 0.8733760714530945,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        131,
+        132
+      ]
+    },
+    {
+      "episode": 145,
+      "frames": 167,
+      "max_coverage": 0.8760244597352755,
+      "max_source_reward": 0.9221310615539551,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        165,
+        166
+      ]
+    },
+    {
+      "episode": 146,
+      "frames": 103,
+      "max_coverage": 0.8557614968595694,
+      "max_source_reward": 0.9008015394210815,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        101,
+        102
+      ]
+    },
+    {
+      "episode": 147,
+      "frames": 162,
+      "max_coverage": 0.8436212072351837,
+      "max_source_reward": 0.888022243976593,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        160,
+        161
+      ]
+    },
+    {
+      "episode": 148,
+      "frames": 78,
+      "max_coverage": 0.8586112218823572,
+      "max_source_reward": 0.9038013219833374,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        76,
+        77
+      ]
+    },
+    {
+      "episode": 149,
+      "frames": 137,
+      "max_coverage": 0.8479169048084383,
+      "max_source_reward": 0.8925440311431885,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        135,
+        136
+      ]
+    },
+    {
+      "episode": 150,
+      "frames": 113,
+      "max_coverage": 0.8474700642475052,
+      "max_source_reward": 0.8920737504959106,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        111,
+        112
+      ]
+    },
+    {
+      "episode": 151,
+      "frames": 152,
+      "max_coverage": 0.877583597474228,
+      "max_source_reward": 0.9237722158432007,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        150,
+        151
+      ]
+    },
+    {
+      "episode": 152,
+      "frames": 154,
+      "max_coverage": 0.8468673283747806,
+      "max_source_reward": 0.8914394378662109,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        152,
+        153
+      ]
+    },
+    {
+      "episode": 153,
+      "frames": 97,
+      "max_coverage": 0.7946938273553401,
+      "max_source_reward": 0.8365198373794556,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        95,
+        96
+      ]
+    },
+    {
+      "episode": 154,
+      "frames": 99,
+      "max_coverage": 0.8534287583428279,
+      "max_source_reward": 0.8983460068702698,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        97,
+        98
+      ]
+    },
+    {
+      "episode": 155,
+      "frames": 94,
+      "max_coverage": 0.814545895625414,
+      "max_source_reward": 0.8574168682098389,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        92,
+        93
+      ]
+    },
+    {
+      "episode": 156,
+      "frames": 90,
+      "max_coverage": 0.8446996869009343,
+      "max_source_reward": 0.8891576528549194,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        88,
+        89
+      ]
+    },
+    {
+      "episode": 157,
+      "frames": 114,
+      "max_coverage": 0.8166963915461707,
+      "max_source_reward": 0.8596804738044739,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        112,
+        113
+      ]
+    },
+    {
+      "episode": 158,
+      "frames": 105,
+      "max_coverage": 0.848243860699544,
+      "max_source_reward": 0.8928883671760559,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        103,
+        104
+      ]
+    },
+    {
+      "episode": 159,
+      "frames": 94,
+      "max_coverage": 0.7854975730044945,
+      "max_source_reward": 0.8268395662307739,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        92,
+        93
+      ]
+    },
+    {
+      "episode": 160,
+      "frames": 147,
+      "max_coverage": 0.865548345343827,
+      "max_source_reward": 0.9111035466194153,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        145,
+        146
+      ]
+    },
+    {
+      "episode": 161,
+      "frames": 137,
+      "max_coverage": 0.8241784475229995,
+      "max_source_reward": 0.8675562739372253,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        135,
+        136
+      ]
+    },
+    {
+      "episode": 162,
+      "frames": 161,
+      "max_coverage": 0.8609586976206675,
+      "max_source_reward": 0.9062724113464355,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        159,
+        160
+      ]
+    },
+    {
+      "episode": 163,
+      "frames": 76,
+      "max_coverage": 0.8651497002353264,
+      "max_source_reward": 0.9106840491294861,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        74,
+        75
+      ]
+    },
+    {
+      "episode": 164,
+      "frames": 126,
+      "max_coverage": 0.8313705840263684,
+      "max_source_reward": 0.8751268982887268,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        124,
+        125
+      ]
+    },
+    {
+      "episode": 165,
+      "frames": 193,
+      "max_coverage": 0.8226408237919196,
+      "max_source_reward": 0.8659375905990601,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        191,
+        192
+      ]
+    },
+    {
+      "episode": 166,
+      "frames": 105,
+      "max_coverage": 0.8466081959081629,
+      "max_source_reward": 0.8911664485931396,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        103,
+        104
+      ]
+    },
+    {
+      "episode": 167,
+      "frames": 140,
+      "max_coverage": 0.8495037098883051,
+      "max_source_reward": 0.8942143321037292,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        138,
+        139
+      ]
+    },
+    {
+      "episode": 168,
+      "frames": 85,
+      "max_coverage": 0.853373370880274,
+      "max_source_reward": 0.8982877135276794,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        83,
+        84
+      ]
+    },
+    {
+      "episode": 169,
+      "frames": 134,
+      "max_coverage": 0.8256181872758916,
+      "max_source_reward": 0.8690717220306396,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        132,
+        133
+      ]
+    },
+    {
+      "episode": 170,
+      "frames": 130,
+      "max_coverage": 0.8490447555122331,
+      "max_source_reward": 0.8937312960624695,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        128,
+        129
+      ]
+    },
+    {
+      "episode": 171,
+      "frames": 115,
+      "max_coverage": 0.8490069208481503,
+      "max_source_reward": 0.8936913013458252,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        113,
+        114
+      ]
+    },
+    {
+      "episode": 172,
+      "frames": 78,
+      "max_coverage": 0.8346674258791147,
+      "max_source_reward": 0.8785972595214844,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        76,
+        77
+      ]
+    },
+    {
+      "episode": 173,
+      "frames": 131,
+      "max_coverage": 0.8478039386129448,
+      "max_source_reward": 0.8924251794815063,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        129,
+        130
+      ]
+    },
+    {
+      "episode": 174,
+      "frames": 246,
+      "max_coverage": 0.8797054245893701,
+      "max_source_reward": 0.9260057210922241,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        244,
+        245
+      ]
+    },
+    {
+      "episode": 175,
+      "frames": 146,
+      "max_coverage": 0.8117114023052503,
+      "max_source_reward": 0.8544330596923828,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        144,
+        145
+      ]
+    },
+    {
+      "episode": 176,
+      "frames": 89,
+      "max_coverage": 0.8486682074899172,
+      "max_source_reward": 0.8933349251747131,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        87,
+        88
+      ]
+    },
+    {
+      "episode": 177,
+      "frames": 127,
+      "max_coverage": 0.8564407716025386,
+      "max_source_reward": 0.9015167355537415,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        125,
+        126
+      ]
+    },
+    {
+      "episode": 178,
+      "frames": 148,
+      "max_coverage": 0.8405545134145336,
+      "max_source_reward": 0.884794294834137,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        146,
+        147
+      ]
+    },
+    {
+      "episode": 179,
+      "frames": 155,
+      "max_coverage": 0.8528736614003674,
+      "max_source_reward": 0.8977618217468262,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        153,
+        154
+      ]
+    },
+    {
+      "episode": 180,
+      "frames": 170,
+      "max_coverage": 0.8581234499689544,
+      "max_source_reward": 0.9032877683639526,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        168,
+        169
+      ]
+    },
+    {
+      "episode": 181,
+      "frames": 107,
+      "max_coverage": 0.8190080541503659,
+      "max_source_reward": 0.8621137142181396,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        105,
+        106
+      ]
+    },
+    {
+      "episode": 182,
+      "frames": 56,
+      "max_coverage": 0.849912338108612,
+      "max_source_reward": 0.8946446180343628,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        54,
+        55
+      ]
+    },
+    {
+      "episode": 183,
+      "frames": 139,
+      "max_coverage": 0.8427863888518903,
+      "max_source_reward": 0.887143611907959,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        137,
+        138
+      ]
+    },
+    {
+      "episode": 184,
+      "frames": 229,
+      "max_coverage": 0.8426532574538289,
+      "max_source_reward": 0.887003481388092,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        227,
+        228
+      ]
+    },
+    {
+      "episode": 185,
+      "frames": 64,
+      "max_coverage": 0.8819050254826739,
+      "max_source_reward": 0.9283210635185242,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        62,
+        63
+      ]
+    },
+    {
+      "episode": 186,
+      "frames": 92,
+      "max_coverage": 0.840904640216574,
+      "max_source_reward": 0.8851628303527832,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        90,
+        91
+      ]
+    },
+    {
+      "episode": 187,
+      "frames": 145,
+      "max_coverage": 0.8838910213697957,
+      "max_source_reward": 0.930411696434021,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        143,
+        144
+      ]
+    },
+    {
+      "episode": 188,
+      "frames": 105,
+      "max_coverage": 0.7867872526405919,
+      "max_source_reward": 0.8281971216201782,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        103,
+        104
+      ]
+    },
+    {
+      "episode": 189,
+      "frames": 160,
+      "max_coverage": 0.8177500190334265,
+      "max_source_reward": 0.8607894778251648,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        158,
+        159
+      ]
+    },
+    {
+      "episode": 190,
+      "frames": 204,
+      "max_coverage": 0.8688041043636968,
+      "max_source_reward": 0.9145306348800659,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        202,
+        203
+      ]
+    },
+    {
+      "episode": 191,
+      "frames": 159,
+      "max_coverage": 0.845683448160525,
+      "max_source_reward": 0.8901930451393127,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        157,
+        158
+      ]
+    },
+    {
+      "episode": 192,
+      "frames": 185,
+      "max_coverage": 0.8591306469170723,
+      "max_source_reward": 0.9043480157852173,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        183,
+        184
+      ]
+    },
+    {
+      "episode": 193,
+      "frames": 125,
+      "max_coverage": 0.8613346453749233,
+      "max_source_reward": 0.9066678881645203,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        123,
+        124
+      ]
+    },
+    {
+      "episode": 194,
+      "frames": 95,
+      "max_coverage": 0.8520255763312,
+      "max_source_reward": 0.8968689441680908,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        93,
+        94
+      ]
+    },
+    {
+      "episode": 195,
+      "frames": 100,
+      "max_coverage": 0.8684729843639439,
+      "max_source_reward": 0.9141819477081299,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        98,
+        99
+      ]
+    },
+    {
+      "episode": 196,
+      "frames": 105,
+      "max_coverage": 0.8668931566710336,
+      "max_source_reward": 0.9125190377235413,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        103,
+        104
+      ]
+    },
+    {
+      "episode": 197,
+      "frames": 167,
+      "max_coverage": 0.8541256781368302,
+      "max_source_reward": 0.8990797400474548,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        165,
+        166
+      ]
+    },
+    {
+      "episode": 198,
+      "frames": 125,
+      "max_coverage": 0.8873894254743243,
+      "max_source_reward": 0.9340941905975342,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        123,
+        124
+      ]
+    },
+    {
+      "episode": 199,
+      "frames": 153,
+      "max_coverage": 0.8537962594404951,
+      "max_source_reward": 0.8987328410148621,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        151,
+        152
+      ]
+    },
+    {
+      "episode": 200,
+      "frames": 167,
+      "max_coverage": 0.860360903960199,
+      "max_source_reward": 0.9056432247161865,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        165,
+        166
+      ]
+    },
+    {
+      "episode": 201,
+      "frames": 92,
+      "max_coverage": 0.8610111338769165,
+      "max_source_reward": 0.906327486038208,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        90,
+        91
+      ]
+    },
+    {
+      "episode": 202,
+      "frames": 167,
+      "max_coverage": 0.8778104029105868,
+      "max_source_reward": 0.9240110516548157,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        165,
+        166
+      ]
+    },
+    {
+      "episode": 203,
+      "frames": 150,
+      "max_coverage": 0.8784169368549423,
+      "max_source_reward": 0.9246494174003601,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        148,
+        149
+      ]
+    },
+    {
+      "episode": 204,
+      "frames": 133,
+      "max_coverage": 0.8567559691591952,
+      "max_source_reward": 0.901848316192627,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        131,
+        132
+      ]
+    },
+    {
+      "episode": 205,
+      "frames": 49,
+      "max_coverage": 0.784193772423702,
+      "max_source_reward": 0.8254669904708862,
+      "source_success_frames": 0,
+      "done_frame_indices": [
+        47,
+        48
+      ]
+    }
+  ],
+  "corner_reconstruction_error_px": {
+    "mean_absolute": 1.5378182606121404e-05,
+    "p99_absolute": 2.567705486232011e-05,
+    "max_absolute": 3.4435757453839795e-05
+  },
+  "current_pose_reward_error": {
+    "mean_absolute": 0.008718278811712228,
+    "p99_absolute": 0.09107051635100646,
+    "max_absolute": 0.25564104589474046
+  },
+  "next_pose_reward_error_within_episode": {
+    "mean_absolute": 2.5431916548009358e-08,
+    "p99_absolute": 1.735208852815528e-07,
+    "max_absolute": 2.657292075269879e-07
+  },
+  "source_success_frames": 0,
+  "reconstructed_success_frames": 0,
+  "source_max_reward": 0.9488797187805176,
+  "scope": "Checks published flags/rewards and reconstructed polygon geometry. Does not explain the original human recording termination policy."
+}
