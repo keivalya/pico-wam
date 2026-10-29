@@ -119,8 +119,7 @@ python3.11 -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-The initial repository is private during release preparation, so cloning requires
-access. The CPU examples need no cluster, GPU, MuJoCo or external dataset download.
+The CPU examples need no cluster, GPU, MuJoCo or external dataset download.
 The direct dependency versions were tested on Python 3.11.9/macOS arm64; complete
 tested environment records are under [requirements/](requirements/).
 
