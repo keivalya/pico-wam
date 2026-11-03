@@ -6,6 +6,14 @@
 
 </div>
 
+[**Paper (arXiv:2611.01039)**](https://arxiv.org/abs/2611.01039) · [PDF](https://arxiv.org/pdf/2611.01039)
+
+**Author:** Keivalya Pandya, Northeastern University
+**Research:** World action models, robot learning, counterfactual prediction,
+and model-based planning.
+[Research summary and citation guidance](docs/RESEARCH_SUMMARY.md) ·
+[Paper and software BibTeX](CITATION.bib) · [Reproduction guide](docs/REPRODUCING.md)
+
 pico-WAM combines a policy, action-conditioned dynamics and a state readout around
 one shared representation. You can trace a decision from an observation through
 imagined consequences to an executed action, then check those consequences in a
@@ -44,8 +52,7 @@ The manuscript, *pico-WAM: Evaluating Counterfactual Prediction and Planning Err
 in a Compact World Action Model*, studies a supplied-state setting with a constant
 instruction. It does not evaluate visual-only control or language generalization.
 This repository contains the code and numerical evidence; the manuscript and its
-development history are maintained separately. A publication link will be added
-when available.
+development history are maintained separately. Read the [arXiv preprint](https://arxiv.org/abs/2611.01039).
 
 The main Push-T study uses **15 training seeds**, matched initialization and action
 minibatches, 30,000 updates per condition, and 200 paired final starts per seed.
@@ -307,8 +314,22 @@ To deliberately refresh the release input manifest after development, run
 
 ## Citation and license
 
-Use [CITATION.cff](CITATION.cff) to cite software version 0.1.0. Publication metadata
-will be added when the manuscript is public; no publication or acceptance is implied.
+For the research findings, cite the [arXiv preprint](https://arxiv.org/abs/2611.01039).
+GitHub's citation button uses the paper metadata in [CITATION.cff](CITATION.cff).
+[Download BibTeX](CITATION.bib) for both the paper and software version 0.1.0.
+The preprint is not a claim of journal acceptance.
+
+```bibtex
+@misc{pandya2026picowam,
+  title = {{pico-WAM}: Evaluating Counterfactual Prediction and Planning Error in a Compact World Action Model},
+  author = {Pandya, Keivalya},
+  year = {2026},
+  eprint = {2611.01039},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.RO},
+  url = {https://arxiv.org/abs/2611.01039}
+}
+```
 
 MIT license, copyright Keivalya Pandya. Vendored Diffusion Policy code retains its
 [upstream MIT license](followup/vendor/diffusion_policy/LICENSE), authorship and pinned

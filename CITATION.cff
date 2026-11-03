@@ -1,12 +1,40 @@
 cff-version: 1.2.0
-message: "Please cite this software when using the implementation or reproduction workflows."
+message: "Please cite the paper for the research findings; cite the software version when using the implementation or reproduction workflows."
 type: software
 title: "pico-WAM: A Compact World Action Model"
 authors:
   - family-names: Pandya
     given-names: Keivalya
+    affiliation: Northeastern University
 version: 0.1.0
 date-released: 2026-10-29
 license: MIT
 repository-code: "https://github.com/keivalya/pico-wam"
 url: "https://github.com/keivalya/pico-wam"
+abstract: >-
+  pico-WAM is a compact World Action Model for inspecting interactions between
+  a learned policy, action-conditioned dynamics, and trajectory scoring.
+  The repository provides Push-T experiments, a separate door-opening study,
+  archived numerical evidence, and executable reproduction workflows.
+  The controlled Push-T study supplies physical state at inference.
+keywords:
+  - world action models
+  - world models
+  - robot learning
+  - model-based planning
+  - counterfactual prediction
+  - trajectory scoring
+  - imitation learning
+  - Push-T
+preferred-citation:
+  type: article
+  title: "pico-WAM: Evaluating Counterfactual Prediction and Planning Error in a Compact World Action Model"
+  authors:
+    - family-names: Pandya
+      given-names: Keivalya
+  year: 2026
+  journal: arXiv
+  url: "https://arxiv.org/abs/2611.01039"
+  identifiers:
+    - type: other
+      value: "arXiv:2611.01039"
