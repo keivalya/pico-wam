@@ -6,11 +6,13 @@
 
 </div>
 
-[**Project page**](https://www.keivalya.com/pico-wam/) · [**Paper (arXiv:2611.01039)**](https://arxiv.org/abs/2611.01039) · [PDF](https://arxiv.org/pdf/2611.01039)
+[**Project page**](https://www.keivalya.com/pico-wam/) · [**Paper (arXiv:2611.01039)**](https://arxiv.org/abs/2611.01039) · [PDF](https://arxiv.org/pdf/2611.01039) · [Medium tutorial](https://medium.com/@keivalyap/building-a-world-action-model-wam-from-scratch-i-0ad41c323776)
 
 **Author:** Keivalya Pandya, Northeastern University
+
 **Research:** World action models, robot learning, counterfactual prediction,
 and model-based planning.
+
 [Research summary and citation guidance](docs/RESEARCH_SUMMARY.md) ·
 [Paper and software BibTeX](CITATION.bib) · [Reproduction guide](docs/REPRODUCING.md)
 
@@ -38,6 +40,7 @@ model and an external planner.
 
 | Your goal | First command or guide |
 |---|---|
+| Read the accompanying blog | [Building a World-Action-Model (WAM) from Scratch — I](https://medium.com/@keivalyap/building-a-world-action-model-wam-from-scratch-i-0ad41c323776) |
 | Learn the complete pipeline on a CPU | `python -m examples.quickstart` |
 | Understand the architecture and losses | [Teaching guide](docs/TEACHING.md) |
 | Regenerate paper figures and numerical summaries | `python reproduce.py figures` |
