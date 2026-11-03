@@ -6,7 +6,7 @@
 
 </div>
 
-[**Paper (arXiv:2611.01039)**](https://arxiv.org/abs/2611.01039) · [PDF](https://arxiv.org/pdf/2611.01039)
+[**Project page**](https://www.keivalya.com/pico-wam/) · [**Paper (arXiv:2611.01039)**](https://arxiv.org/abs/2611.01039) · [PDF](https://arxiv.org/pdf/2611.01039)
 
 **Author:** Keivalya Pandya, Northeastern University
 **Research:** World action models, robot learning, counterfactual prediction,

@@ -5,6 +5,8 @@
 **Affiliation:** Northeastern University
 **Code:** https://github.com/keivalya/pico-wam
 
+**Project page:** https://www.keivalya.com/pico-wam/
+
 **Preprint:** [arXiv:2611.01039](https://arxiv.org/abs/2611.01039), submitted October 31, 2026.
 **Full text:** [PDF](https://arxiv.org/pdf/2611.01039).
 This is an arXiv preprint, not a claim of journal acceptance.
